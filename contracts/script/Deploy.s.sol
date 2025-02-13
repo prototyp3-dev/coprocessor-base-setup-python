@@ -6,18 +6,15 @@ import {Create2} from "openzeppelin-contracts/contracts/utils/Create2.sol";
 
 import {MyContract} from "../src/MyContract.sol";
 
-address constant DEPLOY_FACTORY = 0x4e59b44847b379578588920cA78FbF26c0B4956C;
-
 contract Deploy is Script {
     address constant DEPLOY_FACTORY =
         0x4e59b44847b379578588920cA78FbF26c0B4956C;
     bytes32 constant SALT = bytes32(0);
-    address constant taskIssuerAddress =
-        0x95401dc811bb5740090279Ba06cfA8fcF6113778;
 
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         bytes32 machineHash = vm.envBytes32("MACHINE_HASH");
+        address taskIssuerAddress = vm.envAddress("TASK_ISSUER");
 
         vm.startBroadcast(deployerPrivateKey);
 

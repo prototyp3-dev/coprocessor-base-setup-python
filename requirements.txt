@@ -1,0 +1,1 @@
+python-cartesi @ git+https://github.com/prototyp3-dev/python-cartesi@feat/gio-request

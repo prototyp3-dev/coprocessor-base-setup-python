@@ -128,7 +128,7 @@ celerybeat.pid
 *.sage.py
 
 # Environments
-.env
+.env*
 .venv
 env/
 venv/
@@ -169,3 +169,17 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
+
+# Foundry
+cache
+out
+broadcast
+
+# Other
+rnd
+llama
+.cartesi
+localstack-volume
+cartesi-lambada-coprocessor
+operator-data
+logs

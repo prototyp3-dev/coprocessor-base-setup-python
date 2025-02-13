@@ -7,7 +7,7 @@ SHELL := /bin/bash
 CONTRACT_ADDRESS ?= 0x13A4DdC7A8Ea9d1a88A823C512A0f95BF279653B
 
 #.cartesi/image/hash
-deploy-contract: --load-env
+deploy-contract: --load-env .cartesi/image/hash
 	cd contracts && forge install --no-commit
 	cd contracts && forge build
 	cd contracts && PRIVATE_KEY=${PRIVATE_KEY} MACHINE_HASH=0x$(shell xxd -p -c32 .cartesi/image/hash) forge script script/Deploy.s.sol --rpc-url ${RPC_URL} --broadcast
@@ -25,10 +25,15 @@ ${ENVFILE}:
 
 up: llama-model
 	docker compose up -d
+	docker compose up -d llama-server
+
+down:
+	docker compose down -v
 
 build: .cartesi/image/hash
 
-.cartesi/image/hash: rebuild
+.cartesi/image/hash:
+	cartesi build
 
 rebuild:
 	rm -rf .cartesi
@@ -39,18 +44,22 @@ rebuild:
 	 bash -c "/carize.sh && chown $(id -u):$(id -g) /output/output.*"
 
 .cartesi/presigned:
-	curl -s -X POST "http://127.0.0.1:3034/upload" -d "{}" " 2> /dev/null > .cartesi/presigned
+	curl -s -X POST "http://127.0.0.1:3034/upload" -d "{}" 2> /dev/null > .cartesi/presigned
 
 # presigned = $(eval presigned := $$(shell \
 # 	 cat .cartesi/presigned))$(presigned)
 
 publish: .cartesi/output.cid .cartesi/presigned
-	curl -X PUT "$(cat .cartesi/presigned | jq -r '.presigned_url' | sed 's/solver-bucket.localstack:4566/localhost:4566\/solver-bucket/')" -H "Content-Type: application/octet-stream" --data-binary "@.cartesi/output.car"
-	curl -X POST "http://127.0.0.1:3034/publish/$(cat .cartesi/presigned | jq -r '.upload_id')" -d "{}"
+	@curl -s -X PUT "$(shell cat .cartesi/presigned | jq -r '.presigned_url' | sed 's/solver-bucket.localstack:4566/localhost:4566\/solver-bucket/')" -H "Content-Type: application/octet-stream" --data-binary "@.cartesi/output.car"
+	@curl -s -X POST "http://127.0.0.1:3034/publish/$(shell cat .cartesi/presigned | jq -r '.upload_id')" -d "{}" | jq
+	@echo -e "Publishing.\nRun 'make publish-status' to check the upload status, and when it is complete run 'make ensure-publish' to register the app"
 
-publish-status:
-	curl -X GET "http://127.0.0.1:3034/publish_status/$(echo $presigned | jq -r '.upload_id')"
-	curl -X POST "http://127.0.0.1:3033/ensure/$(cat .cartesi/output.cid)/$(xxd -p -c32 .cartesi/image/hash)/$(cat .cartesi/output.size)"
+publish-status: .cartesi/output.cid .cartesi/presigned
+	@curl -s -X GET "http://127.0.0.1:3034/publish_status/$(shell cat .cartesi/presigned | jq -r '.upload_id')" | jq
+	@echo -e "\nRun 'make ensure-publish' to register the app when it is complete"
+
+ensure-publish: .cartesi/output.cid .cartesi/presigned
+	@curl -s -X POST "http://127.0.0.1:3034/ensure/$(shell cat .cartesi/output.cid)/$(shell xxd -p -c32 .cartesi/image/hash)/$(shell cat .cartesi/output.size)" | jq
 
 llama-model: llama/models/Phi-3-mini-4k-instruct-q4.gguf
 

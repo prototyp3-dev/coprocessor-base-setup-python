@@ -1,4 +1,9 @@
 # syntax=docker.io/docker/dockerfile:1
+
+# FROM --platform=linux/riscv64 python-cartesi:latest AS python-cartesi-build
+
+
+
 FROM --platform=linux/riscv64 cartesi/python:3.10-slim-jammy
 
 LABEL io.cartesi.rollups.sdk_version=0.11.1
@@ -18,12 +23,17 @@ EOF
 ARG MACHINE_EMULATOR_TOOLS_VERSION=0.16.1
 ADD https://github.com/cartesi/machine-emulator-tools/releases/download/v${MACHINE_EMULATOR_TOOLS_VERSION}/machine-emulator-tools-v${MACHINE_EMULATOR_TOOLS_VERSION}.deb /
 RUN dpkg -i /machine-emulator-tools-v${MACHINE_EMULATOR_TOOLS_VERSION}.deb \
-  && rm /machine-emulator-tools-v${MACHINE_EMULATOR_TOOLS_VERSION}.deb
+    && rm /machine-emulator-tools-v${MACHINE_EMULATOR_TOOLS_VERSION}.deb
 
 ENV PATH="/opt/cartesi/bin:${PATH}"
 
 WORKDIR /opt/cartesi/dapp
 COPY ./requirements.txt .
+
+
+# COPY --from=python-cartesi-build /opt/python-cartesi /opt/python-cartesi
+# RUN pip install /opt/python-cartesi --no-cache --find-links https://prototyp3-dev.github.io/pip-wheels-riscv/wheels/
+# RUN rm -rf /opt/python-cartesi
 
 RUN <<EOF
 set -e

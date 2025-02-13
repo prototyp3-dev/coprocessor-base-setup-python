@@ -35,6 +35,10 @@ services:
     depends_on:
       anvil:
         condition: service_healthy
+      postgres:
+        condition: service_healthy
+      # llama-server:
+      #   condition: service_healthy
       setup-operator:
         condition: service_completed_successfully
     volumes:
@@ -67,6 +71,11 @@ services:
 
   postgres:
     image: postgres:latest
+    container_name: cartesi-coprocessor-postgres
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres || exit 1"]
+      interval: 10s
+      timeout: 5s
     environment:
       POSTGRES_PASSWORD: password
       POSTGRES_USER: user
@@ -166,6 +175,8 @@ services:
       interval: 10s
       retries: 200
       start_period: 10s
+    ports:
+      - 11434:8080
     networks:
       - coprocessor-network
 

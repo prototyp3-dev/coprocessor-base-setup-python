@@ -1,13 +1,14 @@
-from logging import getLogger, basicConfig, TRACE
+from logging import getLogger, basicConfig, DEBUG
 from pydantic import BaseModel
 from typing import Annotated, List
 import json
 
 from cartesi import App, Rollup, RollupData, abi
+from cartesi.models import _str2hex as str2hex
 
 LOGGER = getLogger(__name__)
-basicConfig(level=TRACE)
-app = App()
+basicConfig(level=DEBUG)
+app = App(raw_input = True)
 
 BytesList = Annotated[List[bytes], abi.ABIType('bytes[]')]
 
@@ -25,11 +26,7 @@ class ChallengeNotice(BaseModel):
     n_moves: abi.UInt
     n_moves_left: abi.UInt
 
-
-def str2hex(str):
-    """Encodes a string as a hex string"""
-    return "0x" + str.encode("utf-8").hex()
-
+LLAMA_DOMAIN = int.from_bytes(bytes.fromhex('2b'), "big") # llama domain
 DATA_MESSAGE = "The word is \"%s\" and the word sets are:\n%s"
 
 standard_llama_message = {
@@ -46,29 +43,55 @@ standard_llama_message = {
 @app.advance()
 def handle_advance(rollup: Rollup, data: RollupData) -> bool:
 
+    LOGGER.debug(f"App advance 0x{rollup=} {data=}")
+
     payload = data.bytes_payload()
     words_model = abi.decode_to_model(data=payload, model=Words)
 
-    selected_words = [bytes.fromhex(w[2:]).decode('utf-8') for w in words_model.words]
+    selected_words = [w.decode('utf-8') for w in words_model.words]
 
-    LOGGER.debug(f"Challenge 0x{words_model.challenge_id.hex().rjust(64,'0')} {selected_words=}")
+    LOGGER.info(f"Challenge id 0x{words_model.challenge_id.hex().rjust(64,'0')} and words selected {selected_words}")
 
-    challenge_original_sets = ["lime","wattermellon","tie","lime, wattermellon","lime, tie","wattermellon, tie"]
+    challenge_original_sets = ["lime","wattermelon","tie","lime, wattermelon","lime, tie","wattermelon, tie"]
 
     current_sets = challenge_original_sets.copy()
 
     for selected_word in selected_words:
         llama_message = standard_llama_message.copy()
-        current_sets_str = [f"{i}. {current_sets[i]}" for i in range(len(current_sets))]
-        llama_message["messages"][1]["content"] = DATA_MESSAGE % (selected_word,'\n'.join(current_sets_str))
+        current_sets_str = [f"{i+1}: {current_sets[i]}" for i in range(len(current_sets))]
+        message = DATA_MESSAGE % (selected_word,'\n'.join(current_sets_str))
+        LOGGER.info(message)
+        llama_message["messages"][1]["content"] = message
 
         res = rollup.gio(
             {
-                "domain":bytes.fromhex('2b'),
-                "id":f"0x{str2hex(json.dumps(llama_message))}"
+                "domain":LLAMA_DOMAIN,
+                "id":str2hex(json.dumps(llama_message))
             }
         )
-        LOGGER.debug("Gio Res '%s'", payload)
+        gio_res = json.loads(res.decode("utf-8"))
+        llama_res = None
+        if gio_res.get('response') is not None:
+            llama_res = json.loads(bytes.fromhex(gio_res['response'][2:]).decode("utf-8"))
+        LOGGER.debug(f"llama Res {llama_res}")
+        if llama_res is not None and llama_res.get('choices') is not None and len(llama_res['choices']) > 0 and \
+                llama_res['choices'][0].get('message') is not None and  llama_res['choices'][0]['message'].get('content') is not None:
+            content = llama_res['choices'][0]['message']['content']
+            splitted_content = content.split('.')
+            if len(splitted_content) > 0:
+                set_chosen = 0
+                try:
+                    set_chosen = int(splitted_content[0])
+                except Exception as e:
+                    LOGGER.warn(f"Error processing llama response Res {e}")
+                    continue
+                if set_chosen > 0 and set_chosen <= len(current_sets):
+                    words_chosen_set = current_sets[set_chosen - 1]
+                    reasoning = None
+                    if len(splitted_content) > 1:
+                        reasoning = '.'.join(splitted_content[1:]).strip()
+
+                    LOGGER.info(f"Chosen set for word '{selected_word}': {set_chosen} {words_chosen_set}. Reasoning: {reasoning}")
 
     notice = ChallengeNotice(
         challenge_id = words_model.challenge_id,

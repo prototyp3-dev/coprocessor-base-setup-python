@@ -182,3 +182,4 @@ llama
 localstack-volume
 cartesi-lambada-coprocessor
 operator-data
+logs

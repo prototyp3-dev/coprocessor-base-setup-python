@@ -169,3 +169,16 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
+
+# Foundry
+cache
+out
+broadcast
+
+# Other
+rnd
+llama
+.cartesi
+localstack-volume
+cartesi-lambada-coprocessor
+operator-data

@@ -215,7 +215,7 @@ next-env.d.ts
 contracts/cache
 contracts/out
 contracts/broadcast
-contracts/lib
+!contracts/lib
 
 # Other
 rnd

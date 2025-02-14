@@ -1,0 +1,9 @@
+[submodule "contracts/lib/openzeppelin-contracts"]
+	path = contracts/lib/openzeppelin-contracts
+	url = https://github.com/openzeppelin/openzeppelin-contracts
+[submodule "contracts/lib/forge-std.git"]
+	path = contracts/lib/forge-std.git
+	url = https://github.com/foundry-rs/forge-std.git
+[submodule "contracts/lib/coprocessor-base-contract.git"]
+	path = contracts/lib/coprocessor-base-contract.git
+	url = https://github.com/Mugen-Builders/coprocessor-base-contract.git

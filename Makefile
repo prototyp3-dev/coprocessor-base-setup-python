@@ -26,10 +26,12 @@ rebuild:
 	 bash -c "/carize.sh && chown $(id -u):$(id -g) /output/output.*"
 
 #.cartesi/image/hash
-deploy-contract: --load-env .cartesi/image/hash
+build-contract:
 	cd contracts && forge install --no-commit
-	cd contracts && forge build
-	cd contracts && TASK_ISSUER=${TASK_ISSUER} PRIVATE_KEY=${PRIVATE_KEY} MACHINE_HASH=0x$(shell xxd -p -c32 .cartesi/image/hash) forge script script/Deploy.s.sol --rpc-url ${RPC_URL} --broadcast
+	cd contracts && forge build --via-ir
+
+deploy-contract: --load-env .cartesi/image/hash build-contract
+	cd contracts && TASK_ISSUER=${TASK_ISSUER} PRIVATE_KEY=${PRIVATE_KEY} MACHINE_HASH=0x$(shell xxd -p -c32 .cartesi/image/hash) forge script script/Deploy.s.sol --rpc-url ${RPC_URL} --broadcast --via-ir
 
 send: --load-env
 	cast send --private-key=${PRIVATE_KEY} --rpc-url ${RPC_URL} ${CONTRACT_ADDRESS} "runExecution(bytes)" ${PAYLOAD}
@@ -67,11 +69,9 @@ ${ENVFILE}.%:
 	test ! -f $@ && $(error "file $@ doesn't exist")
 
 #.cartesi/image/hash
-deploy-contract-%: ${ENVFILE}.% .cartesi/image/hash
+deploy-contract-%: ${ENVFILE}.% .cartesi/image/hash build-contract
 	@$(eval include include $<)
-	cd contracts && forge install --no-commit
-	cd contracts && forge build
-	cd contracts && TASK_ISSUER=${TASK_ISSUER} PRIVATE_KEY=${PRIVATE_KEY} MACHINE_HASH=0x$(shell xxd -p -c32 .cartesi/image/hash) forge script script/Deploy.s.sol --rpc-url ${RPC_URL} --broadcast
+	cd contracts && TASK_ISSUER=${TASK_ISSUER} PRIVATE_KEY=${PRIVATE_KEY} MACHINE_HASH=0x$(shell xxd -p -c32 .cartesi/image/hash) forge script script/Deploy.s.sol --rpc-url ${RPC_URL} --broadcast --via-ir
 
 send-%: ${ENVFILE}.%
 	@$(eval include include $<)

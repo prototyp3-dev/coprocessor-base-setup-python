@@ -3,7 +3,7 @@
 ENVFILE := .env
 SHELL := /bin/bash
 
-CONTRACT_ADDRESS ?= 0x2AB8b1cd5308bF9682Ab2e724B4D934cc835BAdC
+CONTRACT_ADDRESS ?= 0x1ed582352d0cAedd758B7F571cDf33A3804Db8c1
 
 up: llama-model
 	docker compose up -d
@@ -43,6 +43,7 @@ ${ENVFILE}:
 	@test ! -f $@ && echo "$(ENVFILE) not found. Creating with default values"
 	echo PRIVATE_KEY='0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80' >> $(ENVFILE)
 	echo RPC_URL=http://127.0.0.1:8545 >> $(ENVFILE)
+	echo TASK_ISSUER=0x95401dc811bb5740090279Ba06cfA8fcF6113778 >> $(ENVFILE)
 
 .cartesi/presigned:
 	curl -s -X POST "http://127.0.0.1:3034/upload" -d "{}" 2> /dev/null > .cartesi/presigned

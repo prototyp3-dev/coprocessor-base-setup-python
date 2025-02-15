@@ -4,6 +4,7 @@ pragma solidity ^0.8.28;
 import "./EvmCoprocessorAdapter.sol";
 
 contract TikalContest is EvmCoprocessorAdapter {
+    error ChallengeFinalized();
     error InvalidParam(string reason);
     error InvalidPrize(string reason);
 
@@ -51,11 +52,29 @@ contract TikalContest is EvmCoprocessorAdapter {
         uint256 totalPrize;
         uint256 nPrizes;
         mapping(uint8 => Result) prizes;
+        bool finalized;
     }
 
     mapping(bytes32 => Challenge) public challenges;
     mapping(uint256 => bytes32) public challengeHistory;
-    uint256 nChallenges;
+    uint256 public nChallenges;
+
+    function getPrizes(
+        bytes32 challengeId
+    ) public view returns (Result[] memory) {
+        Result[] memory prizes = new Result[](challenges[challengeId].nPrizes);
+
+        for (uint8 i = 0; i < challenges[challengeId].nPrizes; ++i) {
+            prizes[i].prize = challenges[challengeId].prizes[i].prize;
+            prizes[i].timestamp = challenges[challengeId].prizes[i].timestamp;
+            prizes[i].score = challenges[challengeId].prizes[i].score;
+            prizes[i].moves = challenges[challengeId].prizes[i].moves;
+            prizes[i].movesLeft = challenges[challengeId].prizes[i].movesLeft;
+            prizes[i].user = challenges[challengeId].prizes[i].user;
+            prizes[i].escaped = challenges[challengeId].prizes[i].escaped;
+        }
+        return prizes;
+    }
 
     function createChallenge(
         bytes32 challengeId,
@@ -83,11 +102,15 @@ contract TikalContest is EvmCoprocessorAdapter {
         nChallenges++;
     }
 
-    function finalizeChallenge(bytes32 challengeId) external payable {
+    function finalizeChallenge(bytes32 challengeId) external {
+        if (challenges[challengeId].finalized)
+            revert ChallengeFinalized();
         if (challenges[challengeId].end == 0)
             revert InvalidParam("not created");
         if (challenges[challengeId].end >= block.timestamp)
             revert InvalidParam("not ended");
+
+        challenges[challengeId].finalized = true;
 
         bool sent;
         uint256 remainingPrize = challenges[challengeId].totalPrize;

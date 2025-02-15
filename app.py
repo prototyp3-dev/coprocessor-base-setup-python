@@ -96,7 +96,7 @@ def handle_advance(rollup: Rollup, data: RollupData) -> bool:
     notice = ChallengeNotice(
         challenge_id = words_model.challenge_id,
         timestamp = data.metadata.block_timestamp,
-        score = 0,
+        score = 60,
         n_moves = 6,
         n_moves_left = 3,
         user = data.metadata.msg_sender,

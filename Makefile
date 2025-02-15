@@ -11,6 +11,7 @@ up: llama-model
 
 down:
 	docker compose down -v
+	docker compose down -v llama-server
 
 build: .cartesi/image/hash
 

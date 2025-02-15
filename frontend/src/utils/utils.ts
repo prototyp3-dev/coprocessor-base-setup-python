@@ -74,19 +74,19 @@ export async function getPrizes(challengeId: `0x${string}`): Promise<IPrize[]> {
     abi: contractAbi.abi as Abi,
     functionName: "getPrizes",
     args: [challengeId]
-  }) as any[];
+  }) as Record<string, unknown>[];
 
   for (let i = 0; i < prizesRes.length; i++) {
     prizes.push({
       challengeId: challengeId,
       nTreasures: BigInt(i),
-      escaped: prizesRes[i].escaped,
-      moves: prizesRes[i].moves,
-      movesLeft: prizesRes[i].movesLeft,
-      prize: prizesRes[i].prize,
-      score: prizesRes[i].score,
-      timestamp: prizesRes[i].timestamp,
-      user: prizesRes[i].user
+      escaped: prizesRes[i].escaped as boolean,
+      moves: prizesRes[i].moves as bigint,
+      movesLeft: prizesRes[i].movesLeft as bigint,
+      prize: prizesRes[i].prize as bigint,
+      score: prizesRes[i].score as bigint,
+      timestamp: prizesRes[i].timestamp as bigint,
+      user: prizesRes[i].user as `0x${string}`
     });
   }
   return prizes;
@@ -99,7 +99,7 @@ export async function getChallenge(challengeId: `0x${string}`): Promise<IChallen
     abi: contractAbi.abi as Abi,
     functionName: "challenges",
     args: [challengeId]
-  }) as any[];
+  }) as unknown[];
 
   const challenge: IChallenge = {
     challengeId: challengeId,

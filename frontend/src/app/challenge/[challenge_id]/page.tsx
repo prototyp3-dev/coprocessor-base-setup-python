@@ -1,11 +1,11 @@
 "use client";
 import Gameboard from "@/components/Gameboard";
 import { envClient } from "@/utils/clientEnv";
+import { GameboardMap, GameboardState, mockedData } from "@/utils/data";
 // import Image from "next/image";
 
 import { IChallenge, IPrize } from "@/utils/models";
 import { connectPublicClient, connectWalletClient, contractAbi, getChallenge, timeToDateUTCString } from "@/utils/utils";
-import Link from "next/link";
 import { use, useEffect, useState } from "react";
 import { encodeAbiParameters, formatEther, parseAbiParameters, toHex } from "viem";
 
@@ -16,6 +16,9 @@ export default function ChallengePage({ params }: { params: Promise<{ challenge_
   const [reasonHistory, setReasonHistory] = useState<string[]>();
   const [gameEnded, setGameEnded] = useState<boolean>(false);
   const [gameSubmitted, setGameSubmitted] = useState<boolean>(false);
+  const [transacting, setTransacting] = useState<boolean>(false);
+  const [gameState, setGameState] = useState<GameboardState>();
+  const [gameboardMap, setGameboardMap] = useState<GameboardMap>();
 
   const useParams = use(params);
   const now = Date.now()/1000;
@@ -40,6 +43,10 @@ export default function ChallengePage({ params }: { params: Promise<{ challenge_
     words.push("orange");
     words.push("fruit");
     setWordHistory(words);
+
+    setGameState(mockedData);
+    const mockedMap = mockedData.tiles;
+    setGameboardMap(mockedMap);
   }
 
   async function onWordChange(e: React.FormEvent<HTMLInputElement>) {
@@ -47,7 +54,7 @@ export default function ChallengePage({ params }: { params: Promise<{ challenge_
   }
 
   async function sendWord() {
-    if (!selectedWord) return;
+    if (!selectedWord || transacting) return;
     const localWordHistory = wordHistory ? wordHistory.slice() : new Array<string>();
     const localReasonHistory = reasonHistory ? reasonHistory.slice() : new Array<string>();
     console.log("selected word",selectedWord)
@@ -56,12 +63,14 @@ export default function ChallengePage({ params }: { params: Promise<{ challenge_
     localReasonHistory.splice(0,0,reason);
     setWordHistory(localWordHistory);
     setReasonHistory(localReasonHistory);
-    setSelectedWord("");
+
+    // TODO: if (gameState.game_status == "victory" || gameState.game_status == "defeat")
     setGameEnded(true);
+    setSelectedWord("");
   }
 
   async function submitResult() {
-    if (!useParams.challenge_id || !gameEnded || !wordHistory?.length) return;
+    if (!useParams.challenge_id || transacting || !gameEnded || !wordHistory?.length) return;
 
     const walletClient = await connectWalletClient();
     const client = connectPublicClient();
@@ -157,22 +166,23 @@ export default function ChallengePage({ params }: { params: Promise<{ challenge_
               <div className="w-full max-w-sm min-w-[200px]">
                 <div className="relative">
                   <input onChange={onWordChange} type="text" value={selectedWord}
+                    disabled={gameEnded || transacting}
                     className="peer w-full bg-transparent placeholder:text-slate-700 text-black text-sm border border-slate-400 rounded-md px-3 py-2 transition duration-300 ease focus:outline-none focus:border-slate-400 hover:border-slate-500 shadow-sm focus:shadow"
                   />
                   <label className={!selectedWord ? "absolute cursor-text bg-slate-100 px-1 left-2.5 top-2.5 text-slate-700 text-sm transition-all transform origin-left peer-focus:-top-2 peer-focus:left-2.5 peer-focus:text-xs peer-focus:text-slate-400 peer-focus:scale-90" : "absolute cursor-text bg-slate-100 px-1 transition-all transform origin-left -top-2 left-2.5 text-xs text-slate-400 scale-90"}>
-                    New word.
+                    { gameEnded ? `${gameState?.game_status}!! please submit` : "New word."}
                   </label>
                 </div>
               </div>
 
               {!gameEnded ? <button
-                className={"px-8 py-2 rounded-md bg-sky-100 border border-sky-300 shadow-md shadow-sky-50/10 " + (selectedWord ? " hover:bg-sky-200" : " cursor-not-allowed")} disabled={!selectedWord}
+                className={"px-8 py-2 rounded-md bg-sky-100 border border-sky-300 shadow-md shadow-sky-50/10 " + (selectedWord || transacting ? " hover:bg-sky-200" : " cursor-not-allowed")} disabled={!selectedWord || transacting}
                 onClick={sendWord}
               >Send Word
               </button> :
               <button
-                className="px-8 py-2 rounded-md bg-emerald-100 border border-emerald-300 hover:bg-emerald-200 shadow-md shadow-emerald-50/10"
-                onClick={submitResult}
+                className={"px-8 py-2 rounded-md bg-emerald-100 border border-emerald-300 hover:bg-emerald-200 shadow-md shadow-emerald-50/10" + (transacting ? " hover:bg-emerald-200" : " cursor-not-allowed")}
+                onClick={submitResult} disabled={transacting}
               > Submit Result
               </button>
               }
@@ -184,7 +194,7 @@ export default function ChallengePage({ params }: { params: Promise<{ challenge_
                   wordHistory.map((word: string, index: number) => {
                     return (
                       <div key={`history-${index}`} className="grid grid-cols-1  hover:bg-slate-200">
-                        <span className="text-sm">{word}</span>
+                        <span className="text-sm">{wordHistory.length-index}) {word}</span>
                         { reasonHistory && reasonHistory[index] ?
                           <p className="pl-2 text-sm">{reasonHistory[index]}</p> : <></>}
 
@@ -199,9 +209,72 @@ export default function ChallengePage({ params }: { params: Promise<{ challenge_
         </div>
 
 
-        <div className="w-max flex-1 bg-slate-50 rounded-xl m-2 flex justify-center">
+        <div className="w-max flex-1 bg-slate-50 rounded-xl m-2 flex justify-center grid grid-cols-1 gap-2">
 
-          <Gameboard></Gameboard>
+          <Gameboard boardState={gameState} boardMap={gameboardMap}></Gameboard>
+
+          <div className="grid grid-cols-1 gap-2 pt-2 pl-10 pr-10 bg-slate-100 text-sm"
+          >
+
+            <div className="grid grid-cols-2 gap-20">
+            <div className="flex justify-between w-full">
+              <span className="w-2/5 flex justify-start font-semibold">Status</span>
+              <span className="w-3/5 flex justify-end">
+                  {gameState?.game_status} { gameState?.game_status == "defeat" ? `(reason: ${gameState?.defeat_reason})` : "" }
+              </span>
+            </div>
+            <div className="flex justify-between w-full">
+              <span className="w-2/5 flex justify-start font-semibold">Last Visited</span>
+                <span className="w-2/5 flex justify-end">
+                  {gameState?.last_visited_tile_type}
+                </span>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-20">
+            <div className="flex justify-between w-full">
+              <span className="w-4/5 flex justify-start font-semibold">Treasures</span>
+              <span className="w-1/5 flex justify-end">
+                {gameState?.treasure_count}
+              </span>
+            </div>
+              <div className="flex justify-between w-full">
+              <span className="w-4/5 flex justify-start font-semibold">Total Moves</span>
+                <span className="w-1/5 flex justify-end">
+                  {gameState?.move_count}
+                </span>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-20">
+            <div className="flex justify-between w-full">
+              <span className="w-4/5 flex justify-start font-semibold">Max Water Supply</span>
+              <span className="w-1/5 flex justify-end">
+                {gameState?.max_water_supply}
+              </span>
+            </div>
+              <div className="flex justify-between w-full">
+              <span className="w-4/5 flex justify-start font-semibold">Supply</span>
+                <span className="w-1/5 flex justify-end">
+                  {gameState?.water_supply}
+                </span>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-20">
+            <div className="flex justify-between w-full">
+              <span className="w-4/5 flex justify-start font-semibold">Max Curses</span>
+              <span className="w-1/5 flex justify-end">
+                {gameState?.curse_count}
+              </span>
+            </div>
+              <div className="flex justify-between w-full">
+              <span className="w-4/5 flex justify-start font-semibold">Amulets</span>
+                <span className="w-1/5 flex justify-end">
+                  {gameState?.amulet_count} (max {gameState?.max_amulet_count })
+                </span>
+            </div>
+          </div>
+
+          </div>
 
         </div>
 
@@ -210,7 +283,7 @@ export default function ChallengePage({ params }: { params: Promise<{ challenge_
           { challenge && challenge.prizes?.length ? <>
             {
               challenge.prizes.map((prize: IPrize, index: number) => {
-                if (!prize.prize) return (<></>);
+                if (!prize.prize) return (<div key={`prizes-${index}`}></div>);
 
                 return (
                   <div
@@ -263,7 +336,7 @@ export default function ChallengePage({ params }: { params: Promise<{ challenge_
                       </div>
                       </>
                     ) : (
-                      <div>Not claimed</div>
+                      <div className="font-semibold">Not claimed</div>
                     )}
                   </div>
                 );

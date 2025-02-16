@@ -1,12 +1,12 @@
-import core_engine.aux as aux
-import core_engine.const as const
-import core_engine.confs as confs
+from .aux import MOCKED_WORD_MOVES, check_word_similarity,print_gameboard_stats, print_gameboard, calculate_score, check_valid_tile_coord, query_ai_for_closest_word_group
+from .const import REASONING, INDEX, TYPE, WORD, BEGINNING, END, EMPTY, WATER, AMULET, TRAP, CURSE, TREASURE,EXIT, ONGOING, DEFEAT, VICTORY, TILES
+from .confs import MAP_1, GENESIS_WORDS, MAP_1_INITIAL_WORD_POSITIONS, INITIAL_WATER_SUPPLY, INITIAL_CURSES_COUNT, INITIAL_AMULET_COUNT, MAP_BOUNDARIES
 
 import random
 
 class GameMap:
 
-    def __init__(self, tiles_definition=confs.MAP_1, game_id=-1):
+    def __init__(self, tiles_definition=MAP_1, game_id=-1):
         self.tiles = tiles_definition
 
         if game_id > -1:
@@ -20,50 +20,50 @@ class GameMap:
 
         print(f"Drawing 3 words for game id {game_id}")
         while (len(word_list) < 3):
-            word_index = random.randint(0, len(confs.GENESIS_WORDS) -1)
-            if (not confs.GENESIS_WORDS[word_index] in word_list):
-                word_list.append(confs.GENESIS_WORDS[word_index])
+            word_index = random.randint(0, len(GENESIS_WORDS) -1)
+            if (not GENESIS_WORDS[word_index] in word_list):
+                word_list.append(GENESIS_WORDS[word_index])
         print(f"Drawn words are {word_list}")
 
         #Setting up tiles with initial configuration
-        tiles = confs.MAP_1
+        tiles = MAP_1
 
         #Placing selected words on initil positions
-        for word_position in confs.MAP_1_INITIAL_WORD_POSITIONS:
+        for word_position in MAP_1_INITIAL_WORD_POSITIONS:
             line, column = word_position
             tiles[line][column] = {
-                const.TYPE: const.WORD,
-                const.WORD: word_list.pop()
+                TYPE: WORD,
+                WORD: word_list.pop()
             }
 
         return tiles
-        
+
 class GameBoard:
 
     #Constructor to initialize an empty board
     def __init__(self):
         self.tiles = {}
-        self.water_supply = confs.INITIAL_WATER_SUPPLY
-        self.max_water_supply = confs.INITIAL_WATER_SUPPLY
-        self.curse_count = confs.INITIAL_CURSES_COUNT
-        self.amulet_count = confs.INITIAL_AMULET_COUNT
+        self.water_supply = INITIAL_WATER_SUPPLY
+        self.max_water_supply = INITIAL_WATER_SUPPLY
+        self.curse_count = INITIAL_CURSES_COUNT
+        self.amulet_count = INITIAL_AMULET_COUNT
         self.max_amulet_count = 0
         self.treasure_count = 0
         self.move_count = 0
-        self.last_visited_tile_type = const.EMPTY
+        self.last_visited_tile_type = EMPTY
         self.last_visited_tile = (0, 0)
         self.last_move_reasoning = ""
         self.score = 0
-        self.defeat_reason = const.EMPTY
-        self.game_status = const.ONGOING
+        self.defeat_reason = EMPTY
+        self.game_status = ONGOING
         self.words_on_board = {}
         self.word_tile_coords_set = set()
 
-        for line in confs.MAP_BOUNDARIES.keys():
+        for line in MAP_BOUNDARIES.keys():
             self.tiles[line] = {}
 
-            for column in range(confs.MAP_BOUNDARIES[line][const.BEGINNING], confs.MAP_BOUNDARIES[line][const.END] + 1):
-                self.tiles[line][column] = {const.TYPE: const.EMPTY}
+            for column in range(MAP_BOUNDARIES[line][BEGINNING], MAP_BOUNDARIES[line][END] + 1):
+                self.tiles[line][column] = {TYPE: EMPTY}
 
     def load_initial_words(self, setup_words):
         #Validate words are valid and in correct amount
@@ -71,10 +71,10 @@ class GameBoard:
         for line in setup_words.keys():
             for column in setup_words[line].keys():
                 if word_count >= 3:
-                    raise ValueError(f"Provided more than 3 initial words")
+                    raise ValueError("Provided more than 3 initial words")
 
                 new_word = setup_words[line][column]
-                similar_word = aux.check_word_similarity(new_word, self.words_on_board)
+                similar_word = check_word_similarity(new_word, self.words_on_board)
                 if similar_word:
                     raise ValueError(f"Provided word ({new_word} is similar to an existing word ({similar_word}))")
                 word_count += 1
@@ -82,7 +82,7 @@ class GameBoard:
         for line in setup_words.keys():
             for column in setup_words[line].keys():
                 new_word = setup_words[line][column]
-                self.tiles[line][column] = {const.TYPE: const.WORD, const.WORD: new_word}
+                self.tiles[line][column] = {TYPE: WORD, WORD: new_word}
                 self.words_on_board[new_word] = (line, column)
                 self.word_tile_coords_set.add((line, column))
 
@@ -90,53 +90,53 @@ class GameBoard:
 
         for line in game_map.tiles.keys():
             for column in game_map.tiles[line].keys():
-                tile_type = game_map.tiles[line][column][const.TYPE]
+                tile_type = game_map.tiles[line][column][TYPE]
                 #Increase the total number of amulets available on map
-                if tile_type == const.AMULET:
+                if tile_type == AMULET:
                     self.max_amulet_count += 1
 
     def setup_initial_words_based_on_map(self, game_map):
 
         for line in game_map.tiles.keys():
             for column in game_map.tiles[line].keys():
-                tile_type = game_map.tiles[line][column][const.TYPE]
+                tile_type = game_map.tiles[line][column][TYPE]
                 #Increase the total number of amulets available on map
-                if tile_type == const.WORD:
-                    word = game_map.tiles[line][column][const.WORD]
-                    self.tiles[line][column] = {const.TYPE: const.WORD, const.WORD: word}
+                if tile_type == WORD:
+                    word = game_map.tiles[line][column][WORD]
+                    self.tiles[line][column] = {TYPE: WORD, WORD: word}
                     self.words_on_board[word] = (line, column)
                     self.word_tile_coords_set.add((line, column))
 
     def rebuild_indexing_data_structures(self):
         #Creating new indexing data structures
         self.words_on_board = {}
-        self.word_tile_coords_set = set()  
+        self.word_tile_coords_set = set()
 
         #Go through board tiles to index data
         for line in self.tiles.keys():
             for column in self.tiles[line].keys():
                 tile = self.tiles[line][column]
-                
-                if tile[const.TYPE] == const.WORD:
+
+                if tile[TYPE] == WORD:
                     #Indexing
-                    word = self.tiles[line][column][const.WORD]
+                    word = self.tiles[line][column][WORD]
                     self.words_on_board[word] = (line, column)
                     self.word_tile_coords_set.add((line, column))
 
 class GameState:
-    
+
     def __init__(self, game_id=-1, game_map=None, game_board=None, words=None, new_game=True):
         if new_game:
             #New game
             self.game_board = GameBoard()
             self.game_map = GameMap(game_id=game_id)
-            aux.print_gameboard(self.game_map.tiles)
+            print_gameboard(self.game_map.tiles)
             self.words = []
             self.game_id = game_id
 
             self.game_board.load_parameter_based_on_map(self.game_map)
             self.game_board.setup_initial_words_based_on_map(self.game_map)
-            aux.print_gameboard_stats(self.game_board)
+            print_gameboard_stats(self.game_board)
 
         else:
             #Constructor to load an ongoing game
@@ -149,7 +149,7 @@ class GameState:
             self.fix_numeric_keys()
             #Rebuild gameboard indexing structures
             self.game_board.rebuild_indexing_data_structures()
-            
+
 
     def fix_numeric_keys(self):
 
@@ -182,30 +182,30 @@ class GameExecutor:
         self.game_map = game_map
 
     def execute_game(self, words, handler=None):
-        
+
         for word in words:
             #Generate word influence groups and tiles mapping
             word_groups_tile_mapping = generate_word_groups_per_tile(self.game_board)
 
             #Ask AI to provide the closest related word group index
-            wg_index_dict = aux.query_ai_for_closest_word_group(word, word_groups_tile_mapping, handler)
+            wg_index_dict = query_ai_for_closest_word_group(word, word_groups_tile_mapping, handler)
 
             #Storing movement reasoning
-            self.game_board.last_move_reasoning = wg_index_dict[const.REASONING]
+            self.game_board.last_move_reasoning = wg_index_dict[REASONING]
 
             #Choose tile from tile group associated to chosen word group
-            tile = self.choose_tile_from_word_group(word, wg_index_dict[const.INDEX], word_groups_tile_mapping, handler)
+            tile = self.choose_tile_from_word_group(word, wg_index_dict[INDEX], word_groups_tile_mapping, handler)
 
             #Evaluate the move
             self.evaluate_move(tile, word)
 
             #Print game board state
             print(f"Game board state after move {self.game_board.move_count}")
-            aux.print_gameboard(self.game_board.tiles)
-            aux.print_gameboard_stats(self.game_board)
+            print_gameboard(self.game_board.tiles)
+            print_gameboard_stats(self.game_board)
 
             #Check if game ended
-            if (self.game_board.game_status != const.ONGOING):
+            if (self.game_board.game_status != ONGOING):
                 #Game ended, no need to evaluate other words
                 break
 
@@ -217,8 +217,8 @@ class GameExecutor:
         tiles_from_word_group = []
 
         for key in word_groups_tile_mapping.keys():
-            if (word_groups_tile_mapping[key][const.INDEX] == group_index):
-                tiles_from_word_group = word_groups_tile_mapping[key][const.TILES]
+            if (word_groups_tile_mapping[key][INDEX] == group_index):
+                tiles_from_word_group = word_groups_tile_mapping[key][TILES]
 
         print(f"Possible tiles are {tiles_from_word_group}")
         return_tile = tiles_from_word_group[0]
@@ -227,7 +227,7 @@ class GameExecutor:
         if (len(tiles_from_word_group) > 1):
 
             if not handler:
-                return_tile = aux.MOCKED_WORD_MOVES[word]
+                return_tile = MOCKED_WORD_MOVES[word]
                 print("Using mocked data")
             else:
                 #Creating a deterministic seed based on all the words on the map sorted
@@ -243,13 +243,13 @@ class GameExecutor:
         return return_tile
 
     def evaluate_move(self, tile, word):
-        
+
         line, column = tile
 
         #Checking the game board tile is empty
-        if self.game_board.tiles[line][column][const.TYPE] != const.EMPTY:
+        if self.game_board.tiles[line][column][TYPE] != EMPTY:
             #It's not, there is a bug and something went VERY WRONG
-            aux.print_gameboard(self.game_board.tiles)
+            print_gameboard(self.game_board.tiles)
             raise RuntimeError(f"CRITICAL ERROR! Tried moving to tile {tile} with word {word} but it was already occupied")
 
         #Recover map tile
@@ -257,8 +257,8 @@ class GameExecutor:
 
         #Write word on GameBoard tile and update indexing structures
         self.game_board.tiles[line][column] = {
-            const.TYPE: const.WORD,
-            const.WORD: word
+            TYPE: WORD,
+            WORD: word
         }
         self.game_board.words_on_board[word] = (line, column)
         self.game_board.word_tile_coords_set.add((line, column))
@@ -270,68 +270,65 @@ class GameExecutor:
         self.game_board.move_count += 1
 
         #Updating last visited tile data
-        self.game_board.last_visited_tile_type = map_tile[const.TYPE]
+        self.game_board.last_visited_tile_type = map_tile[TYPE]
         self.game_board.last_visited_tile = tile
 
         #Apply efect of map tile on GameBoard
-        if (map_tile[const.TYPE] == const.CURSE):
+        if (map_tile[TYPE] == CURSE):
             #It's a curse, increasing curse count and lose if above limit
             self.game_board.curse_count += 1
             if self.game_board.curse_count > self.game_board.max_amulet_count:
                 #No way to remove all curses, lost the game
-                self.game_board.game_status = const.DEFEAT 
-                self.game_board.defeat_reason = const.CURSE
-                self.game_board.score = aux.calculate_score(self.game_board)
+                self.game_board.game_status = DEFEAT
+                self.game_board.defeat_reason = CURSE
+                self.game_board.score = calculate_score(self.game_board)
 
-        elif (map_tile[const.TYPE] == const.WATER):
+        elif (map_tile[TYPE] == WATER):
             #It's a water fountain, refill the water supply
             self.game_board.water_supply = self.game_board.max_water_supply
 
-        elif (map_tile[const.TYPE] == const.TREASURE):
+        elif (map_tile[TYPE] == TREASURE):
             #It's a treasure chest, increase treasure count
             self.game_board.treasure_count += 1
 
-        elif (map_tile[const.TYPE] == const.TRAP):
+        elif (map_tile[TYPE] == TRAP):
             #It's a trap! (lol, starwars). Decrease max water supply
             self.game_board.max_water_supply -= 1
             if (self.game_board.max_water_supply < 1):
                 #No way to move any longer, lost the game
-                self.game_board.game_status = const.DEFEAT
-                self.game_board.defeat_reason = const.TRAP
-                self.game_board.score = aux.calculate_score(self.game_board)
+                self.game_board.game_status = DEFEAT
+                self.game_board.defeat_reason = TRAP
+                self.game_board.score = calculate_score(self.game_board)
 
-        elif (map_tile[const.TYPE] == const.AMULET):
+        elif (map_tile[TYPE] == AMULET):
             #It's an amulet, increase amulet count
             self.game_board.amulet_count += 1
-        
-        elif (map_tile[const.TYPE] == const.EXIT):
+
+        elif (map_tile[TYPE] == EXIT):
             #It's the exit, check if not cursed
             if (self.game_board.amulet_count >= self.game_board.curse_count):
                 #Safe! Won the game
-                self.game_board.game_status = const.VICTORY
-                self.game_board.score = aux.calculate_score(self.game_board)
+                self.game_board.game_status = VICTORY
+                self.game_board.score = calculate_score(self.game_board)
                 return
             else:
                 #Left the maze cursed :( Lost the game
-                self.game_board.game_status = const.DEFEAT
-                self.game_board.defeat_reason = const.CURSE
-                self.game_board.score = aux.calculate_score(self.game_board)
+                self.game_board.game_status = DEFEAT
+                self.game_board.defeat_reason = CURSE
+                self.game_board.score = calculate_score(self.game_board)
                 return
 
         #Check if there is no more water
         if self.game_board.water_supply <= 0:
             #There isn't, lost the game
-            self.game_board.game_status = const.DEFEAT
-            self.game_board.defeat_reason = const.WATER
-            self.game_board.score = aux.calculate_score(self.game_board)
+            self.game_board.game_status = DEFEAT
+            self.game_board.defeat_reason = WATER
+            self.game_board.score = calculate_score(self.game_board)
 
 #Goes through the board and generates all word groups that influence nearby tiles
 def generate_word_groups_per_tile(game_board):
     tiles = game_board.tiles
-    aux.print_gameboard(tiles)
-
-    #Set of word groups
-    word_groups = set()
+    print_gameboard(tiles)
 
     #Set of tiles to visit
     pending_tiles = set()
@@ -342,7 +339,7 @@ def generate_word_groups_per_tile(game_board):
     #Getting all valid tiles for next move
     for word in game_board.words_on_board.keys():
         line, column = game_board.words_on_board[word]
-        
+
         print(f"\nTile to analyze next: {line},{column}")
 
         adjacent_tiles = [
@@ -355,7 +352,7 @@ def generate_word_groups_per_tile(game_board):
         ]
 
         for adjacent_tile in adjacent_tiles:
-            if aux.check_valid_tile_coord(adjacent_tile):
+            if check_valid_tile_coord(adjacent_tile):
                 if adjacent_tile not in pending_tiles:
                     if adjacent_tile not in game_board.word_tile_coords_set:
                         pending_tiles.add(adjacent_tile)
@@ -380,10 +377,10 @@ def generate_word_groups_per_tile(game_board):
         words = []
 
         for adjacent_tile in adjacent_tiles:
-            if aux.check_valid_tile_coord(adjacent_tile):
+            if check_valid_tile_coord(adjacent_tile):
                 if adjacent_tile in game_board.word_tile_coords_set:
                     line, column = adjacent_tile
-                    words.append(game_board.tiles[line][column][const.WORD])
+                    words.append(game_board.tiles[line][column][WORD])
 
         #Sorting words so we don't create new groups for different tiles in which the
         # adjacents were visited in a different order
@@ -400,9 +397,9 @@ def generate_word_groups_per_tile(game_board):
     idx = 1
     for key in wg_to_tiles.keys():
         wg_to_tiles[key] = {
-            const.INDEX: idx,
-            const.TILES: sorted(wg_to_tiles[key], key=lambda tup: (tup[0],tup[1])  )
+            INDEX: idx,
+            TILES: sorted(wg_to_tiles[key], key=lambda tup: (tup[0],tup[1])  )
         }
-        idx +=1    
+        idx +=1
     print(f"\nFinal mapping state is {wg_to_tiles}")
     return wg_to_tiles

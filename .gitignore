@@ -229,3 +229,5 @@ localstack-volume
 cartesi-lambada-coprocessor
 operator-data
 logs
+
+!/game_engine/.env

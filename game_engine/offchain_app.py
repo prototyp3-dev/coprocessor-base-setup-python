@@ -1,7 +1,7 @@
 import jsonpickle
 from flask import Flask, request, jsonify
 import core_engine.tikal_core as tkl_core
-from core_engine.confs import LLM_SETUP_PROMPT_TEMPLATE_TEXT
+from core_engine.confs import STANDARD_LLAMA_PAYLOAD
 import traceback
 import json
 from dotenv import load_dotenv
@@ -11,28 +11,16 @@ import os
 
 load_dotenv()
 
-standard_llama_message = {
-    "model": "phi3",
-    "messages": [{
-        "role": "system",
-        "content": LLM_SETUP_PROMPT_TEMPLATE_TEXT
-    },
-    {
-        "role": "user",
-        "content": None
-    }]
-}
-
 def call_llama_server(message):
     llama_server_url = os.getenv("LLAMA_SERVER_URL")
     if llama_server_url is None: raise Exception("Llama server url not defined")
 
-    llama_message = standard_llama_message.copy()
+    llama_message = STANDARD_LLAMA_PAYLOAD.copy()
 
     llama_message["messages"][1]["content"] = message
     llama_res = post(llama_server_url + "/v1/chat/completions", json=llama_message).json()
 
-    print("=== DEBUG ===", llama_res)
+    print("Llama response", llama_res)
 
     if llama_res is not None and llama_res.get('choices') is not None and len(llama_res['choices']) > 0 and \
             llama_res['choices'][0].get('message') is not None and  llama_res['choices'][0]['message'].get('content') is not None:

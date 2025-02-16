@@ -48,22 +48,20 @@ export default function ChallengePage({ params }: { params: Promise<{ challenge_
 
     setTransacting(true);
 
-    console.log("selected word",selectedWord)
-
     gameData.words = [selectedWord];
     const newGameData = await advanceGame(gameData);
-    setGameData(newGameData);
     const reason = newGameData?.game_board?.last_move_reasoning || "";
     localWordHistory.splice(0,0,selectedWord);
     localReasonHistory.splice(0,0,reason);
-    setWordHistory(localWordHistory);
-    setReasonHistory(localReasonHistory);
 
-    if (gameData?.game_board.game_status != "ongoing") {
+    if (newGameData?.game_board.game_status != "ongoing") {
       setGameEnded(true);
     }
 
     setSelectedWord("");
+    setGameData(newGameData);
+    setWordHistory(localWordHistory);
+    setReasonHistory(localReasonHistory);
     setTransacting(false);
   }
 
@@ -176,12 +174,12 @@ export default function ChallengePage({ params }: { params: Promise<{ challenge_
               </div>
 
               {!gameEnded ? <button
-                className={"px-8 py-2 rounded-md bg-sky-100 border border-sky-300 shadow-md shadow-sky-50/10 " + (selectedWord || transacting ? " hover:bg-sky-200" : " cursor-not-allowed")} disabled={!selectedWord || transacting}
+                className={"px-8 py-2 rounded-md bg-sky-100 border border-sky-300 shadow-md shadow-sky-50/10 " + (selectedWord && !transacting ? " hover:bg-sky-200" : " cursor-not-allowed")} disabled={!selectedWord || transacting}
                 onClick={sendWord}
               >Send Word
               </button> :
               <button
-                className={"px-8 py-2 rounded-md bg-emerald-100 border border-emerald-300 hover:bg-emerald-200 shadow-md shadow-emerald-50/10" + (transacting ? " hover:bg-emerald-200" : " cursor-not-allowed")}
+                className={"px-8 py-2 rounded-md bg-emerald-100 border border-emerald-300 hover:bg-emerald-200 shadow-md shadow-emerald-50/10" + (!transacting ? " hover:bg-emerald-200" : " cursor-not-allowed")}
                 onClick={submitResult} disabled={transacting}
               > Submit Result
               </button>
@@ -220,7 +218,7 @@ export default function ChallengePage({ params }: { params: Promise<{ challenge_
             <div className="flex justify-between w-full">
               <span className="w-2/5 flex justify-start font-semibold">Status</span>
               <span className="w-3/5 flex justify-end">
-                {gameData?.game_board?.game_status} { gameData?.game_board?.game_status == "defeat" ? `(reason: ${gameData?.game_board?.defeat_reason})` : "" } {gameData?.game_board?.game_status != "ongoing" ? ` - score: ${gameData?.game_board?.score}` : "" }
+                {gameData?.game_board?.game_status} { gameData?.game_board?.game_status == "defeat" ? `(reason: ${gameData?.game_board?.defeat_reason})` : "" } {gameEnded ? ` - score: ${gameData?.game_board?.score}` : "" }
               </span>
             </div>
             <div className="flex justify-between w-full">
@@ -261,7 +259,7 @@ export default function ChallengePage({ params }: { params: Promise<{ challenge_
 
           <div className="grid grid-cols-2 gap-20">
             <div className="flex justify-between w-full">
-              <span className="w-4/5 flex justify-start font-semibold">Max Curses</span>
+              <span className="w-4/5 flex justify-start font-semibold">Curses</span>
               <span className="w-1/5 flex justify-end">
                 {gameData?.game_board?.curse_count}
               </span>

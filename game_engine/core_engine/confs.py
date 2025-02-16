@@ -1,7 +1,4 @@
-import core_engine.const as const
-
-TYPE = const.TYPE
-WORD = const.WORD
+from .const import TYPE, WORD, BEGINNING, END, EMPTY, WATER, AMULET, TRAP, CURSE, TREASURE,EXIT
 
 #Game configurations
 INITIAL_WATER_SUPPLY = 7
@@ -12,32 +9,32 @@ INITIAL_AMULET_COUNT = 0
 #Each side of the map is 4 hexagonal tiles wide
 MAP_BOUNDARIES = {
     1: {
-        const.BEGINNING: 4,
-        const.END: 7
+        BEGINNING: 4,
+        END: 7
     },
     2: {
-        const.BEGINNING: 3,
-        const.END: 7
+        BEGINNING: 3,
+        END: 7
     },
     3: {
-        const.BEGINNING: 2,
-        const.END: 7
+        BEGINNING: 2,
+        END: 7
     },
     4: {
-        const.BEGINNING: 1,
-        const.END: 7
+        BEGINNING: 1,
+        END: 7
     },
     5: {
-        const.BEGINNING: 1,
-        const.END: 6
+        BEGINNING: 1,
+        END: 6
     },
     6: {
-        const.BEGINNING: 1,
-        const.END: 5
+        BEGINNING: 1,
+        END: 5
     },
     7: {
-        const.BEGINNING: 1,
-        const.END: 4
+        BEGINNING: 1,
+        END: 4
     }
 }
 
@@ -56,6 +53,18 @@ LLM_PROMPT_TEMPLATE_TEXT = """
 The word is {given_word} and the word sets are:
 {word_sets}
 """
+
+STANDARD_LLAMA_PAYLOAD = {
+    "model": "phi3",
+    "messages": [{
+        "role": "system",
+        "content": LLM_SETUP_PROMPT_TEMPLATE_TEXT
+    },
+    {
+        "role": "user",
+        "content": None
+    }]
+}
 
 GENESIS_WORDS = [
     "bread",
@@ -1605,18 +1614,18 @@ MAP_1 = {
             WORD: "Bread"
         },
         5: {
-            TYPE: const.EMPTY
+            TYPE: EMPTY
         },
         6: {
-            TYPE: const.TREASURE
+            TYPE: TREASURE
         },
         7: {
-            TYPE: const.TRAP
+            TYPE: TRAP
         }
     },
     2: {
         3: {
-            TYPE: const.EMPTY
+            TYPE: EMPTY
         },
         4: {
             TYPE: WORD,
@@ -1627,104 +1636,104 @@ MAP_1 = {
             WORD: "Bread"
         },
         6: {
-            TYPE: const.EMPTY
+            TYPE: EMPTY
         },
         7: {
-            TYPE: const.EMPTY
+            TYPE: EMPTY
         }
     },
     3: {
         2: {
-            TYPE: const.WATER
+            TYPE: WATER
         },
         3: {
-            TYPE: const.TRAP
+            TYPE: TRAP
         },
         4: {
-            TYPE: const.EMPTY
+            TYPE: EMPTY
         },
         5: {
-            TYPE: const.EMPTY
+            TYPE: EMPTY
         },
         6: {
-            TYPE: const.EXIT
+            TYPE: EXIT
         },
         7: {
-            TYPE: const.EMPTY
+            TYPE: EMPTY
         }
     },
     4: {
         1:{
-            TYPE: const.EMPTY
+            TYPE: EMPTY
         },
         2: {
-            TYPE: const.EMPTY
+            TYPE: EMPTY
         },
         3: {
-            TYPE: const.EMPTY
+            TYPE: EMPTY
         },
         4: {
-            TYPE: const.CURSE
+            TYPE: CURSE
         },
         5: {
-            TYPE: const.TRAP
+            TYPE: TRAP
         },
         6: {
-            TYPE: const.TREASURE
+            TYPE: TREASURE
         },
         7: {
-            TYPE: const.EMPTY
+            TYPE: EMPTY
         }
     },
     5: {
         1:{
-            TYPE: const.EMPTY
+            TYPE: EMPTY
         },
         2: {
-            TYPE: const.CURSE
+            TYPE: CURSE
         },
         3: {
-            TYPE: const.TRAP
+            TYPE: TRAP
         },
         4: {
-            TYPE: const.EMPTY
+            TYPE: EMPTY
         },
         5: {
-            TYPE: const.EMPTY
+            TYPE: EMPTY
         },
         6: {
-            TYPE: const.EMPTY
+            TYPE: EMPTY
         }
     },
     6: {
         1:{
-            TYPE: const.TREASURE
+            TYPE: TREASURE
         },
         2: {
-            TYPE: const.WATER
+            TYPE: WATER
         },
         3: {
-            TYPE: const.AMULET
+            TYPE: AMULET
         },
         4: {
-            TYPE: const.CURSE
+            TYPE: CURSE
         },
         5: {
-            TYPE: const.EMPTY
+            TYPE: EMPTY
         }
     },
     7: {
         1:{
-            TYPE: const.WATER
+            TYPE: WATER
         },
         2: {
-            TYPE: const.EMPTY
+            TYPE: EMPTY
         },
         3: {
-            TYPE: const.EMPTY
+            TYPE: EMPTY
         },
         4: {
-            TYPE: const.EMPTY
+            TYPE: EMPTY
         }
     }
 }

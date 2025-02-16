@@ -56,6 +56,7 @@ The word is {given_word} and the word sets are:
 
 STANDARD_LLAMA_PAYLOAD = {
     "model": "phi3",
+    "seed":0,
     "messages": [{
         "role": "system",
         "content": LLM_SETUP_PROMPT_TEMPLATE_TEXT

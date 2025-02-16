@@ -3,7 +3,7 @@
 ENVFILE := .env
 SHELL := /bin/bash
 
-CONTRACT_ADDRESS ?= 0x1ed582352d0cAedd758B7F571cDf33A3804Db8c1
+CONTRACT_ADDRESS ?= 0xb55bdFea4d1fd714C5d6926410B06af08b2e8772
 
 up: llama-model
 	docker compose up -d

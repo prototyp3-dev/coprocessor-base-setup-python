@@ -27,7 +27,6 @@ def call_llama_server(message):
     llama_server_url = os.getenv("LLAMA_SERVER_URL")
     if llama_server_url is None: raise Exception("Llama server url not defined")
 
-
     llama_message = standard_llama_message.copy()
 
     llama_message["messages"][1]["content"] = message
@@ -133,12 +132,8 @@ def advance_game():
             #Create game executor and load map and board
             game_executor = tkl_core.GameExecutor(current_game_state.game_board, current_game_state.game_map)
 
-            # set ll handler
-            game_executor.aux.llm_handler = call_llama_server
-            game_executor.aux.llm_in_use = "phi3"
-
             #Execute game
-            gameboard_output = game_executor.execute_game(current_game_state.words)
+            gameboard_output = game_executor.execute_game(current_game_state.words, handler=call_llama_server)
 
             #Remove indexes
             del gameboard_output.words_on_board

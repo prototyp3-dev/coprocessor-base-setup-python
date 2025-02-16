@@ -173,7 +173,7 @@ def check_word_similarity(new_word, previous_words):
     return False
 
 #Returns the word group index closest to the given word
-def query_ai_for_closest_word_group(word, word_groups_tile_mapping):
+def query_ai_for_closest_word_group(word, word_groups_tile_mapping, handler=None):
 
     groups_list_str = ""
     #Creating a list with the word groups
@@ -186,7 +186,7 @@ def query_ai_for_closest_word_group(word, word_groups_tile_mapping):
     print(llm_prompt)
 
     #Calling the LLM
-    llm_response_str = query_llm(llm_prompt)
+    llm_response_str = query_llm(llm_prompt, handler)
 
     #Splitting the selection and the reasoning
     chosen_group_index = llm_response_str.split(sep=".", maxsplit=1)[0]
@@ -201,9 +201,12 @@ def query_ai_for_closest_word_group(word, word_groups_tile_mapping):
     print(f"Chosen group was number {chosen_group_index}.\nReasoning:\n{reasoning}")
     return {const.INDEX: chosen_group_index, const.REASONING: reasoning}
 
-def query_llm(llm_prompt):
+def query_llm(llm_prompt, handler=None):
 
     #The handler is initialized with the mocked one but might be changed to a new one
+    if handler:
+        llm_handler=handler
+    print(f"Using handler {llm_handler}")
     llm_response = llm_handler(llm_prompt)
 
     return llm_response
@@ -224,4 +227,3 @@ def mocked_llm(llm_prompt):
 
 #Initializing the llm handler with the mocked one
 llm_handler = mocked_llm
-llm_in_use = const.MOCKED

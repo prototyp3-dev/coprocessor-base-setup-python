@@ -181,20 +181,20 @@ class GameExecutor:
         self.game_board = game_board
         self.game_map = game_map
 
-    def execute_game(self, words):
+    def execute_game(self, words, handler=None):
         
         for word in words:
             #Generate word influence groups and tiles mapping
             word_groups_tile_mapping = generate_word_groups_per_tile(self.game_board)
 
             #Ask AI to provide the closest related word group index
-            wg_index_dict = aux.query_ai_for_closest_word_group(word, word_groups_tile_mapping)
+            wg_index_dict = aux.query_ai_for_closest_word_group(word, word_groups_tile_mapping, handler)
 
             #Storing movement reasoning
             self.game_board.last_move_reasoning = wg_index_dict[const.REASONING]
 
             #Choose tile from tile group associated to chosen word group
-            tile = self.choose_tile_from_word_group(word, wg_index_dict[const.INDEX], word_groups_tile_mapping)
+            tile = self.choose_tile_from_word_group(word, wg_index_dict[const.INDEX], word_groups_tile_mapping, handler)
 
             #Evaluate the move
             self.evaluate_move(tile, word)
@@ -212,7 +212,7 @@ class GameExecutor:
         #Return full state
         return self.game_board
 
-    def choose_tile_from_word_group(self, word, group_index, word_groups_tile_mapping):
+    def choose_tile_from_word_group(self, word, group_index, word_groups_tile_mapping, handler=None):
 
         tiles_from_word_group = []
 
@@ -226,7 +226,7 @@ class GameExecutor:
         #Checking if there is more than one tile adjacent to the same words
         if (len(tiles_from_word_group) > 1):
 
-            if aux.llm_in_use == const.MOCKED:
+            if not handler:
                 return_tile = aux.MOCKED_WORD_MOVES[word]
                 print("Using mocked data")
             else:

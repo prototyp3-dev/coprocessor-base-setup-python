@@ -4,7 +4,7 @@ pragma solidity ^0.8.28;
 import {Script, console} from "forge-std/Script.sol";
 import {Create2} from "openzeppelin-contracts/contracts/utils/Create2.sol";
 
-import {TikalContest} from "../src/TikalContest.sol";
+import {MyContract} from "../src/MyContract.sol";
 
 contract Deploy is Script {
     address constant DEPLOY_FACTORY =
@@ -21,7 +21,7 @@ contract Deploy is Script {
         console.logString("Deploying Contract");
 
         bytes memory contractCode = abi.encodePacked(
-            type(TikalContest).creationCode,
+            type(MyContract).creationCode,
             abi.encode(
                 taskIssuerAddress, // taskIssuerAddress
                 machineHash // machineHash
@@ -36,7 +36,7 @@ contract Deploy is Script {
         console.logString("Expected contractAddress");
         console.logAddress(contractAddress);
         if (checkSize(contractAddress) == 0) {
-            TikalContest myContract = new TikalContest{salt: SALT}(
+            MyContract myContract = new MyContract{salt: SALT}(
                 taskIssuerAddress, // taskIssuerAddress
                 machineHash // machineHash
             );

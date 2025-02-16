@@ -36,7 +36,6 @@ EOF
 RUN apt remove -y git ca-certificates && apt -y autoremove
 
 COPY ./app.py .
-COPY ./game_engine ./game_engine
 
 ENV ROLLUP_HTTP_SERVER_URL="http://127.0.0.1:5004"
 

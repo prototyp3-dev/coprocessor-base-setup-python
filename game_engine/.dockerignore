@@ -1,6 +1,0 @@
-Dockerfile
-!.env.docker
-tests
-__pycache__
-.python-version
-fly.toml

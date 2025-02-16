@@ -1,0 +1,151 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+    --background: #ffffff;
+    --foreground: #171717;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        --background: #0a0a0a;
+        --foreground: #ededed;
+    }
+}
+
+body {
+    color: var(--foreground);
+    background: var(--background);
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+.header {
+    @apply w-full h-16 bg-gray-300 flex absolute top-0 z-10;
+}
+
+.footer {
+    @apply w-full h-16 p-2 bg-gray-300 absolute bottom-0;
+}
+
+/* main {
+    @apply !pb-[164px] !pt-[96px] grid grid-cols-1 justify-items-center;
+} */
+
+/* [draggable] {
+    -moz-user-select: none;
+    -khtml-user-select: none;
+    -webkit-user-select: none;
+    user-select: none;
+    -moz-user-drag: element;
+    -webkit-user-drag: element;
+    -khtml-user-drag: element;
+    user-drag: element;
+} */
+
+svg {
+}
+svg g {
+    @apply fill-zinc-300;
+    /* fill: #3F51B5; */
+    fill-opacity: 0.4;
+}
+svg g:hover {
+    fill-opacity: 0.7;
+}
+svg g polygon {
+    @apply stroke-zinc-400;
+    /* stroke: #3F51B5; */
+    stroke-width: 0.2;
+    transition: fill-opacity 0.2s;
+}
+svg g text {
+    @apply fill-gray-500;
+    font-size: 0.2em;
+    fill-opacity: 0.7;
+    transition: fill-opacity 0.2s;
+}
+
+/* svg g:hover text {
+    @apply fill-black;
+    fill-opacity: 0.6;
+} */
+
+svg g text.word {
+    @apply fill-black;
+    font-size: 0.2em;
+    fill-opacity: 1;
+}
+
+svg path {
+    fill: none;
+    stroke: hsl(60, 20%, 70%);
+    stroke-width: 0.4em;
+    stroke-opacity: 0.3;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+svg g.active .hexagon {
+    @apply fill-white;
+    fill-opacity: 0.6;
+}
+svg g:hover.active .hexagon {
+    @apply fill-neutral-100;
+    fill-opacity: 0.7;
+}
+
+svg g.exit .hexagon {
+    @apply fill-emerald-200;
+    fill-opacity: 0.4;
+}
+svg g:hover.exit .hexagon {
+    fill-opacity: 0.7;
+}
+
+svg g.curse .hexagon {
+    @apply fill-red-400;
+    fill-opacity: 0.4;
+}
+svg g:hover.curse .hexagon {
+    fill-opacity: 0.7;
+}
+
+svg g.treasure .hexagon {
+    @apply fill-amber-400;
+    fill-opacity: 0.4;
+}
+svg g:hover.treasure .hexagon {
+    fill-opacity: 0.7;
+}
+
+svg g.amulet .hexagon {
+    @apply fill-amber-600;
+    fill-opacity: 0.6;
+}
+svg g:hover.amulet .hexagon {
+    fill-opacity: 0.9;
+}
+
+svg g.trap .hexagon {
+    @apply fill-purple-400;
+    fill-opacity: 0.4;
+}
+svg g:hover.trap .hexagon {
+    fill-opacity: 0.7;
+}
+
+svg g.water .hexagon {
+    @apply fill-sky-300;
+    fill-opacity: 0.4;
+}
+svg g:hover.water .hexagon {
+    fill-opacity: 0.7;
+}
+
+svg g.last polygon {
+    @apply stroke-emerald-300;
+    /* stroke: #3F51B5; */
+    stroke-width: 1;
+    /* transition: fill-opacity 0.2s; */
+}

@@ -15,12 +15,12 @@ abstract contract EvmCoprocessorAdapter is CoprocessorAdapter {
     //        bytes calldata payload
     //    )
 
-    function evmInput(bytes calldata payload) external {
+    function evmInput(address caller, bytes calldata payload) external {
         bytes memory input = abi.encodeWithSignature(
             "EvmAdvance(uint256,address,address,uint256,uint256,uint256,uint256,bytes)",
             block.chainid,
             this,
-            msg.sender,
+            caller,
             block.number,
             block.timestamp,
             block.prevrandao,

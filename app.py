@@ -18,13 +18,13 @@ class Words(BaseModel):
 
 class ChallengeNotice(BaseModel):
     challenge_id: abi.Bytes32
+    timestamp: abi.UInt256
+    score: abi.UInt256
+    n_moves: abi.UInt256
+    n_moves_left: abi.UInt256
     user: abi.Address
-    timestamp: abi.UInt
-    score: abi.UInt
+    n_treasures: abi.UInt8
     escaped: abi.Bool
-    n_treasures: abi.UInt
-    n_moves: abi.UInt
-    n_moves_left: abi.UInt
 
 LLAMA_DOMAIN = int.from_bytes(bytes.fromhex('2b'), "big") # llama domain
 DATA_MESSAGE = "The word is \"%s\" and the word sets are:\n%s"
@@ -95,15 +95,18 @@ def handle_advance(rollup: Rollup, data: RollupData) -> bool:
 
     notice = ChallengeNotice(
         challenge_id = words_model.challenge_id,
-        user = data.metadata.msg_sender,
         timestamp = data.metadata.block_timestamp,
-        score = 0,
-        escaped = True,
-        n_treasures = 1,
+        score = 60,
         n_moves = 6,
-        n_moves_left = 3
+        n_moves_left = 3,
+        user = data.metadata.msg_sender,
+        n_treasures = 1,
+        escaped = True,
     )
-    rollup.notice(f"0x{abi.encode_model(notice).hex()}")
+    notice_hex = f"0x{abi.encode_model(notice).hex()}"
+    LOGGER.debug(f"{notice=}")
+    LOGGER.debug(f"{notice_hex=}")
+    rollup.notice(notice_hex)
     return True
 
 

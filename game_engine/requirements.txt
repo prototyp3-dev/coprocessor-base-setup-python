@@ -1,0 +1,2 @@
+jsonpickle==4.0.1
+pytest==8.3.4

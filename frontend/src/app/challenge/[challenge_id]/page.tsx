@@ -51,7 +51,7 @@ export default function ChallengePage({ params }: { params: Promise<{ challenge_
 
     gameData.words = [selectedWord];
     const newGameData = await advanceGame(gameData);
-    const reason = newGameData.game_board.last_move_reasoning;
+    const reason = newGameData?.game_board?.last_move_reasoning || "";
     localWordHistory.splice(0,0,selectedWord);
     localReasonHistory.splice(0,0,reason);
     setWordHistory(localWordHistory);

@@ -180,7 +180,7 @@ export function buildUrl(baseUrl:string, path:string) {
     return `${formatedBaseUrl}/${formatedPath}`;
 }
 
-export async function newGame(gameData: Record<string,unknown>): Promise<GameData> {
+export async function newGame(gameData: Record<string,unknown>): Promise<GameData|undefined> {
   const res = await fetch(buildUrl(envClient.BACKEND_URL,"new_game"), {
     method: 'POST',
     headers: {
@@ -189,11 +189,18 @@ export async function newGame(gameData: Record<string,unknown>): Promise<GameDat
     body: JSON.stringify(gameData)
   });
 
-  const out: GameData = await res.json();
+  const outJson = await res.json();
+
+  if (outJson["status"] != "success") {
+    console.log(`Request error: ${outJson['message']}`)
+    return;
+  }
+
+  const out: GameData = outJson["game_state"];
   return out;
 }
 
-export async function advanceGame(gameData: Record<string,unknown>): Promise<GameData> {
+export async function advanceGame(gameData: Record<string,unknown>): Promise<GameData|undefined> {
   const res = await fetch(buildUrl(envClient.BACKEND_URL,"advance_game"), {
     method: 'POST',
     headers: {
@@ -202,6 +209,13 @@ export async function advanceGame(gameData: Record<string,unknown>): Promise<Gam
     body: JSON.stringify(gameData)
   });
 
-  const out: GameData = await res.json();
+  const outJson = await res.json();
+
+  if (outJson["status"] != "success") {
+    console.log(`Request error: ${outJson['message']}`)
+    return;
+  }
+
+  const out: GameData = outJson["game_state"];
   return out;
 }

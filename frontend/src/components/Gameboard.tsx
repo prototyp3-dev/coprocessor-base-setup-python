@@ -39,7 +39,7 @@ export default function Gameboard({boardData}:{boardData: GameData | undefined})
                 const hexId = HexUtils.getID(hex);
                 const coords:BoardCoords = gameboardMapping[hexId];
                 if (coords && boardMap && boardMap[coords[0]]) {
-                  const row: any = boardMap[coords[0]];
+                  const row: Record<string,Record<string,string>> = boardMap[coords[0]];
                   if (row[coords[1]]) {
                     hexText = row[coords[1]].type;
                     // console.log("cell",coords,hexText)
@@ -90,7 +90,7 @@ export default function Gameboard({boardData}:{boardData: GameData | undefined})
                 }
 
                 if (coords && boardState.tiles[coords[0]]) {
-                  const row: any = boardState.tiles[coords[0]];
+                  const row: Record<string,Record<string,string>> = boardState.tiles[coords[0]];
                   if (row[coords[1]] && row[coords[1]].type == 'word') {
                     className = "active";
                     hexText = row[coords[1]].word;

@@ -7,7 +7,8 @@ WORKDIR /python-docker
 COPY offchain_server_requirements.txt requirements.txt
 RUN pip3 install -r requirements.txt
 
-COPY . .
+COPY offchain_app.py .
+COPY core_engine core_engine
 
 ARG ENV_FILE=.env
 COPY ${ENV_FILE} .env

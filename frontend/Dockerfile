@@ -20,7 +20,16 @@ RUN \
 FROM base AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
-COPY . .
+COPY next-env.d.ts .
+COPY package.json .
+COPY postcss.config.mjs .
+COPY src src
+COPY tsconfig.json .
+COPY eslint.config.mjs .
+COPY next.config.ts .
+COPY package-lock.json .
+COPY public public
+COPY tailwind.config.ts  .
 
 ARG ENV_FILE=.env
 COPY ${ENV_FILE} .env
@@ -54,8 +63,6 @@ COPY --from=builder /app/public ./public
 # https://nextjs.org/docs/advanced-features/output-file-tracing
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
-
-USER nextjs
 
 EXPOSE 80
 

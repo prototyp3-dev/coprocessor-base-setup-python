@@ -1,5 +1,4 @@
 Dockerfile
-.env.*
 .venv
 .next
 node_modules

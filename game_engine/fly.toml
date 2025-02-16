@@ -1,10 +1,16 @@
+# fly.toml app configuration file generated for tikal-back on 2025-02-16T05:09:10-03:00
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
 
 app = 'tikal-back'
-
 primary_region = 'iad'
+
+[build]
 
 [build.args]
   ENV_FILE=".env.holesky"
+
 
 [http_service]
   internal_port = 80

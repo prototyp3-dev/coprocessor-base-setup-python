@@ -81,11 +81,12 @@ send-%: ${ENVFILE}.%
 
 .cartesi/presigned-%: ${ENVFILE}.%
 	@$(eval include include $<)
-	curl -s -X POST "${SOLVER_URL}" -d "{}" 2> /dev/null > $@
+	curl  -X POST "${SOLVER_URL}/upload" -d "{}" 2> /dev/null > $@
 
 publish-%: ${ENVFILE}.% .cartesi/presigned-% .cartesi/output.cid
-	curl -s -X PUT "$(shell cat $(word 2,$^) | jq -r '.presigned_url')" -H "Content-Type: application/octet-stream" --data-binary "@.cartesi/output.car"
-	curl -s -X POST "${SOLVER_URL}/publish/$(shell cat $(word 2,$^) | jq -r '.upload_id')" -d "{}" | jq
+	@$(eval include include $<)
+	curl  -X PUT "$(shell cat $(word 2,$^) | jq -r '.presigned_url')" -H "Content-Type: application/octet-stream" --data-binary "@.cartesi/output.car"
+	curl  -X POST "${SOLVER_URL}/publish/$(shell cat $(word 2,$^) | jq -r '.upload_id')" -d "{}" | jq
 	echo -e "Publishing.\nRun 'make publish-status-%' to check the upload status, and when it is complete run 'make ensure-publish-%' to register the app"
 
 publish-status-%: ${ENVFILE}.% .cartesi/presigned-% .cartesi/output.cid

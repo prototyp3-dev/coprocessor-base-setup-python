@@ -217,7 +217,7 @@ export default function ChallengePage({ params }: { params: Promise<{ challenge_
             <div className="flex justify-between w-full">
               <span className="w-2/5 flex justify-start font-semibold">Status</span>
               <span className="w-3/5 flex justify-end">
-                {gameData?.game_board?.game_status} { gameData?.game_board?.game_status == "defeat" ? `(reason: ${gameData?.game_board?.defeat_reason})` : "" } {gameData?.game_board?.game_status == "ongoing" ? ` - score: ${gameData?.game_board?.score}` : "" }
+                {gameData?.game_board?.game_status} { gameData?.game_board?.game_status == "defeat" ? `(reason: ${gameData?.game_board?.defeat_reason})` : "" } {gameData?.game_board?.game_status != "ongoing" ? ` - score: ${gameData?.game_board?.score}` : "" }
               </span>
             </div>
             <div className="flex justify-between w-full">

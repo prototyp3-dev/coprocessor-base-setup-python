@@ -10,7 +10,7 @@ INITIAL_AMULET_COUNT = 0
 
 #Structure that maps the limits of the lines and columns of the hexagonal-tiled hexagonal map
 #Each side of the map is 4 hexagonal tiles wide
-MAP_BOUNDARIES = { 
+MAP_BOUNDARIES = {
     1: {
         const.BEGINNING: 4,
         const.END: 7
@@ -41,15 +41,18 @@ MAP_BOUNDARIES = {
     }
 }
 
-LLM_PROMPT_TEMPLATE_TEXT = """
-I am going to provide you with a numbered list of word sets and with an 
-isolated word and I need you to tell me the number of the word set that 
+LLM_SETUP_PROMPT_TEMPLATE_TEXT = """
+I am going to provide you with a numbered list of word sets and with an
+isolated word and I need you to tell me the number of the word set that
 is more related to the given isolated word.
-Only consider the meaning of the word. Do not accept multiple words, 
-ignore radicals and suffix correlations, words that are not present 
+Only consider the meaning of the word. Do not accept multiple words,
+ignore radicals and suffix correlations, words that are not present
 on the english dictionary, in these cases answer 0.
 Begin your answer with the isolated number followed by a period.
 After the period you can add your reasoning for choosing that option.
+"""
+
+LLM_PROMPT_TEMPLATE_TEXT = """
 The word is {given_word} and the word sets are:
 {word_sets}
 """
@@ -68,13 +71,13 @@ MAP_1_INITIAL_WORD_POSITIONS = [
     (1, 4),
     (2, 4),
     (2, 5)
-] 
+]
 
 MAP_1 = {
     1: {
         4: {
             TYPE: WORD,
-            WORD: "Bread" 
+            WORD: "Bread"
         },
         5: {
             TYPE: const.EMPTY
@@ -92,11 +95,11 @@ MAP_1 = {
         },
         4: {
             TYPE: WORD,
-            WORD: "Fish" 
+            WORD: "Fish"
         },
         5: {
             TYPE: WORD,
-            WORD: "Bread" 
+            WORD: "Bread"
         },
         6: {
             TYPE: const.EMPTY
@@ -183,7 +186,7 @@ MAP_1 = {
         },
         5: {
             TYPE: const.EMPTY
-        }        
+        }
     },
     7: {
         1:{

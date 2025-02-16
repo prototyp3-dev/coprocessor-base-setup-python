@@ -19,6 +19,7 @@ export default function ChallengePage({ params }: { params: Promise<{ challenge_
   const [transacting, setTransacting] = useState<boolean>(false);
   const [gameData, setGameData] = useState<GameData>();
 
+
   const useParams = use(params);
   const now = Date.now()/1000;
 
@@ -51,6 +52,7 @@ export default function ChallengePage({ params }: { params: Promise<{ challenge_
 
     gameData.words = [selectedWord];
     const newGameData = await advanceGame(gameData);
+    setGameData(newGameData);
     const reason = newGameData?.game_board?.last_move_reasoning || "";
     localWordHistory.splice(0,0,selectedWord);
     localReasonHistory.splice(0,0,reason);
@@ -60,6 +62,7 @@ export default function ChallengePage({ params }: { params: Promise<{ challenge_
     if (gameData?.game_board.game_status != "ongoing") {
       setGameEnded(true);
     }
+
     setSelectedWord("");
     setTransacting(false);
   }

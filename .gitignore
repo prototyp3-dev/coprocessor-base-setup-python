@@ -128,7 +128,7 @@ celerybeat.pid
 *.sage.py
 
 # Environments
-.env*
+.env
 .venv
 env/
 venv/
@@ -173,6 +173,7 @@ cython_debug/
 # Frontend dependencies
 frontend/node_modules
 frontend/.pnp
+!/frontend/.env
 .pnp.*
 .yarn/*
 !.yarn/patches
@@ -201,7 +202,7 @@ yarn-error.log*
 .pnpm-debug.log*
 
 # env files (can opt-in for committing if needed)
-.env*
+.env.*
 
 # vercel
 .vercel

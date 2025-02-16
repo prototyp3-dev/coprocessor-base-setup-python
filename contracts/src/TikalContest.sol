@@ -171,7 +171,7 @@ contract TikalContest is EvmCoprocessorAdapter {
             );
         emit ReceivedNotice(chId, user, ts, payloadHash);
         if (ts >= challenges[chId].start && ts <= challenges[chId].end) {
-            if (score > challenges[chId].prizes[trasures].score) {
+            if (challenges[chId].prizes[trasures].score > 0 && score > challenges[chId].prizes[trasures].score) {
                 challenges[chId].prizes[trasures].timestamp = ts;
                 challenges[chId].prizes[trasures].score = score;
                 challenges[chId].prizes[trasures].moves = moves;

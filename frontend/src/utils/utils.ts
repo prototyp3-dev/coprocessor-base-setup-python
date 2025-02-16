@@ -4,6 +4,7 @@ import "viem/window";
 import { envClient } from "./clientEnv";
 import contractAbiFile from "@/contracts/TikalContest.json"
 import { IChallenge, IPrize } from "./models";
+import { GameData } from "./data";
 
 export const contractAbi = contractAbiFile;
 
@@ -162,4 +163,45 @@ export function formatDate(date:Date) {
   const finalYear = year.substring(1);
 
   return `${month}/${day}/${finalYear}, ${time}`;
+}
+
+export function buildUrl(baseUrl:string, path:string) {
+    let formatedBaseUrl = baseUrl;
+    let formatedPath = path;
+
+    if (baseUrl[baseUrl.length-1] == "/") {
+        formatedBaseUrl = baseUrl.slice(0, baseUrl.length-1);
+    }
+
+    if (path.length > 0 && path[0] == "/") {
+        formatedPath = path.slice(1);
+    }
+
+    return `${formatedBaseUrl}/${formatedPath}`;
+}
+
+export async function newGame(gameData: Record<string,unknown>): Promise<GameData> {
+  const res = await fetch(buildUrl(envClient.BACKEND_URL,"new_game"), {
+    method: 'POST',
+    headers: {
+        'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(gameData)
+  });
+
+  const out: GameData = await res.json();
+  return out;
+}
+
+export async function advanceGame(gameData: Record<string,unknown>): Promise<GameData> {
+  const res = await fetch(buildUrl(envClient.BACKEND_URL,"advance_game"), {
+    method: 'POST',
+    headers: {
+        'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(gameData)
+  });
+
+  const out: GameData = await res.json();
+  return out;
 }

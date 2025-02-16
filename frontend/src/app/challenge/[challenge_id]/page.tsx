@@ -1,11 +1,11 @@
 "use client";
 import Gameboard from "@/components/Gameboard";
 import { envClient } from "@/utils/clientEnv";
-import { GameboardMap, GameboardState, mockedData } from "@/utils/data";
+import { GameData } from "@/utils/data";
 // import Image from "next/image";
 
 import { IChallenge, IPrize } from "@/utils/models";
-import { connectPublicClient, connectWalletClient, contractAbi, getChallenge, timeToDateUTCString } from "@/utils/utils";
+import { advanceGame, connectPublicClient, connectWalletClient, contractAbi, getChallenge, newGame, timeToDateUTCString } from "@/utils/utils";
 import { use, useEffect, useState } from "react";
 import { encodeAbiParameters, formatEther, parseAbiParameters, toHex } from "viem";
 
@@ -17,8 +17,7 @@ export default function ChallengePage({ params }: { params: Promise<{ challenge_
   const [gameEnded, setGameEnded] = useState<boolean>(false);
   const [gameSubmitted, setGameSubmitted] = useState<boolean>(false);
   const [transacting, setTransacting] = useState<boolean>(false);
-  const [gameState, setGameState] = useState<GameboardState>();
-  const [gameboardMap, setGameboardMap] = useState<GameboardMap>();
+  const [gameData, setGameData] = useState<GameData>();
 
   const useParams = use(params);
   const now = Date.now()/1000;
@@ -29,44 +28,40 @@ export default function ChallengePage({ params }: { params: Promise<{ challenge_
       setChallenge(data);
     });
 
-    mockData();
+    newGame({"game_id":useParams.challenge_id}).then((data) => {
+      setGameData(data);
+    });
+
+    // mockData();
 
   }, [useParams.challenge_id]);
-
-  function mockData() {
-    const reasons = new Array<string>();
-    reasons.push('Chosen set for word \'orange\': 4 lime, wattermelon. Reasoning: The word "orange" is more related to the word set 4: lime, watermelon, as both lime and watermelon are fruits, and orange is also a fruit. Although "orange" is not specifically related to lime or watermelon, it is still more related to the set as it is a fruit like the other two. The tie is not related to "orange" as it is not a fruit. Therefore, option 4 is the closest in category, even though it is not a perfect match.');
-    reasons.push('Chosen set for word \'fruit\': 2 wattermelon. Reasoning: The word "fruit" is more related to the word "watermelon" as both are types of edible, naturally occurring fruits derived from plants. "Tie" and "lime" are also fruits but "watermelon" is a more direct and common association for the word "fruit". The option 4 is incorrect because it includes a number, not a word set.');
-    setReasonHistory(reasons);
-
-    const words = new Array<string>();
-    words.push("orange");
-    words.push("fruit");
-    setWordHistory(words);
-
-    setGameState(mockedData);
-    const mockedMap = mockedData.tiles;
-    setGameboardMap(mockedMap);
-  }
 
   async function onWordChange(e: React.FormEvent<HTMLInputElement>) {
     setSelectedWord(e.currentTarget.value);
   }
 
   async function sendWord() {
-    if (!selectedWord || transacting) return;
+    if (!selectedWord || transacting || !gameData) return;
     const localWordHistory = wordHistory ? wordHistory.slice() : new Array<string>();
     const localReasonHistory = reasonHistory ? reasonHistory.slice() : new Array<string>();
+
+    setTransacting(true);
+
     console.log("selected word",selectedWord)
-    const reason = "new reason";
+
+    gameData.words = [selectedWord];
+    const newGameData = await advanceGame(gameData);
+    const reason = newGameData.game_board.last_move_reasoning;
     localWordHistory.splice(0,0,selectedWord);
     localReasonHistory.splice(0,0,reason);
     setWordHistory(localWordHistory);
     setReasonHistory(localReasonHistory);
 
-    // TODO: if (gameState.game_status == "victory" || gameState.game_status == "defeat")
-    setGameEnded(true);
+    if (gameData?.game_board.game_status != "ongoing") {
+      setGameEnded(true);
+    }
     setSelectedWord("");
+    setTransacting(false);
   }
 
   async function submitResult() {
@@ -77,6 +72,7 @@ export default function ChallengePage({ params }: { params: Promise<{ challenge_
 
     if (!client || !walletClient) return;
 
+    setTransacting(true);
     const [address] = await walletClient.requestAddresses();
     if (!address) return;
     try {
@@ -109,6 +105,7 @@ export default function ChallengePage({ params }: { params: Promise<{ challenge_
     } catch (e) {
         console.log(e);
     }
+    setTransacting(false);
   }
 
   if (!challenge) return (
@@ -170,7 +167,7 @@ export default function ChallengePage({ params }: { params: Promise<{ challenge_
                     className="peer w-full bg-transparent placeholder:text-slate-700 text-black text-sm border border-slate-400 rounded-md px-3 py-2 transition duration-300 ease focus:outline-none focus:border-slate-400 hover:border-slate-500 shadow-sm focus:shadow"
                   />
                   <label className={!selectedWord ? "absolute cursor-text bg-slate-100 px-1 left-2.5 top-2.5 text-slate-700 text-sm transition-all transform origin-left peer-focus:-top-2 peer-focus:left-2.5 peer-focus:text-xs peer-focus:text-slate-400 peer-focus:scale-90" : "absolute cursor-text bg-slate-100 px-1 transition-all transform origin-left -top-2 left-2.5 text-xs text-slate-400 scale-90"}>
-                    { gameEnded ? `${gameState?.game_status}!! please submit` : "New word."}
+                    { gameEnded ? `${gameData?.game_board?.game_status}!! please submit` : "New word."}
                   </label>
                 </div>
               </div>
@@ -188,8 +185,8 @@ export default function ChallengePage({ params }: { params: Promise<{ challenge_
               }
             </div> : <></>}
             <div className="h-fit grid grid-cols-1 gap-2 p-2 bg-slate-100">
-              <span className="text-md font-medium">History</span>
               {wordHistory?.length ? <>
+                <span className="text-md font-medium">History</span>
                 {
                   wordHistory.map((word: string, index: number) => {
                     return (
@@ -201,7 +198,7 @@ export default function ChallengePage({ params }: { params: Promise<{ challenge_
                       </div>
                     );
                   })
-                }</> : <span className="text-md">Submitted</span> }
+                }</> : <span className="text-md"></span> }
             </div>
           </>
         : <span className="text-md">Closed</span>
@@ -209,10 +206,10 @@ export default function ChallengePage({ params }: { params: Promise<{ challenge_
         </div>
 
 
-        <div className="w-max flex-1 bg-slate-50 rounded-xl m-2 flex justify-center grid grid-cols-1 gap-2">
+        <div className="w-max flex-1 bg-slate-50 rounded-xl m-2 justify-center grid grid-cols-1 gap-2">
 
-          <Gameboard boardState={gameState} boardMap={gameboardMap}></Gameboard>
-
+          <Gameboard boardData={gameData}></Gameboard>
+          { gameData?.game_board ?
           <div className="grid grid-cols-1 gap-2 pt-2 pl-10 pr-10 bg-slate-100 text-sm"
           >
 
@@ -220,13 +217,13 @@ export default function ChallengePage({ params }: { params: Promise<{ challenge_
             <div className="flex justify-between w-full">
               <span className="w-2/5 flex justify-start font-semibold">Status</span>
               <span className="w-3/5 flex justify-end">
-                  {gameState?.game_status} { gameState?.game_status == "defeat" ? `(reason: ${gameState?.defeat_reason})` : "" }
+                {gameData?.game_board?.game_status} { gameData?.game_board?.game_status == "defeat" ? `(reason: ${gameData?.game_board?.defeat_reason})` : "" } {gameData?.game_board?.game_status == "ongoing" ? ` - score: ${gameData?.game_board?.score}` : "" }
               </span>
             </div>
             <div className="flex justify-between w-full">
               <span className="w-2/5 flex justify-start font-semibold">Last Visited</span>
                 <span className="w-2/5 flex justify-end">
-                  {gameState?.last_visited_tile_type}
+                  {gameData?.game_board?.last_visited_tile_type}
                 </span>
             </div>
           </div>
@@ -234,13 +231,13 @@ export default function ChallengePage({ params }: { params: Promise<{ challenge_
             <div className="flex justify-between w-full">
               <span className="w-4/5 flex justify-start font-semibold">Treasures</span>
               <span className="w-1/5 flex justify-end">
-                {gameState?.treasure_count}
+                {gameData?.game_board?.treasure_count}
               </span>
             </div>
               <div className="flex justify-between w-full">
               <span className="w-4/5 flex justify-start font-semibold">Total Moves</span>
                 <span className="w-1/5 flex justify-end">
-                  {gameState?.move_count}
+                  {gameData?.game_board?.move_count}
                 </span>
             </div>
           </div>
@@ -248,13 +245,13 @@ export default function ChallengePage({ params }: { params: Promise<{ challenge_
             <div className="flex justify-between w-full">
               <span className="w-4/5 flex justify-start font-semibold">Max Water Supply</span>
               <span className="w-1/5 flex justify-end">
-                {gameState?.max_water_supply}
+                {gameData?.game_board?.max_water_supply}
               </span>
             </div>
               <div className="flex justify-between w-full">
               <span className="w-4/5 flex justify-start font-semibold">Supply</span>
                 <span className="w-1/5 flex justify-end">
-                  {gameState?.water_supply}
+                  {gameData?.game_board?.water_supply}
                 </span>
             </div>
           </div>
@@ -263,19 +260,19 @@ export default function ChallengePage({ params }: { params: Promise<{ challenge_
             <div className="flex justify-between w-full">
               <span className="w-4/5 flex justify-start font-semibold">Max Curses</span>
               <span className="w-1/5 flex justify-end">
-                {gameState?.curse_count}
+                {gameData?.game_board?.curse_count}
               </span>
             </div>
               <div className="flex justify-between w-full">
               <span className="w-4/5 flex justify-start font-semibold">Amulets</span>
                 <span className="w-1/5 flex justify-end">
-                  {gameState?.amulet_count} (max {gameState?.max_amulet_count })
+                  {gameData?.game_board?.amulet_count} (max {gameData?.game_board?.max_amulet_count })
                 </span>
             </div>
           </div>
 
           </div>
-
+          : <></>}
         </div>
 
 

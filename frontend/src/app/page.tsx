@@ -11,7 +11,8 @@ export default function Home() {
   const [challenges, setChallenges] = useState<IChallenge[]>();
 
   useEffect(() => {
-    getChallenges().then((data) => {
+    getChallenges().then((data: IChallenge[]) => {
+      data.reverse();
       setChallenges(data);
     });
   }, []);

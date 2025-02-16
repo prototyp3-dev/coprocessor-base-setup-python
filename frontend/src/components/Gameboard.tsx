@@ -1,5 +1,5 @@
 
-import { BoardCoords, GameboardMap, gameboardMapping,  GameboardState } from '@/utils/data';
+import { BoardCoords, GameboardMap, gameboardMapping,  GameboardState, GameData } from '@/utils/data';
 import { HexGrid, Layout, Hexagon, Text, GridGenerator, HexUtils } from 'react-hexgrid';
 
 
@@ -11,7 +11,10 @@ const layoutConfig = {
   "mapProps": [ 3]
 };
 
-export default function Gameboard({boardState,boardMap}:{boardState: GameboardState | undefined,boardMap: GameboardMap | undefined}) {
+export default function Gameboard({boardData}:{boardData: GameData | undefined}) {
+
+  const boardState: GameboardState | undefined = boardData?.game_board;
+  const boardMap: GameboardMap | undefined = boardData?.game_map.tiles;
 
   const generator = GridGenerator.getGenerator("hexagon");
   const hexagons = generator(3);

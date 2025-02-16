@@ -1,19 +1,19 @@
-import core_engine.const as const
-import core_engine.confs as confs
+from .const import BEGINNING, DEFEAT, END, INDEX, MOCKED, REASONING, TYPE, VICTORY,WORD,TRAP_EMOJI, EXIT_EMOJI,CURSE_EMOJI,EMPTY_EMOJI,WATER_EMOJI,AMULET_EMOJI,NOTHING_EMOJI,TREASURE_EMOJI,EMPTY,TRAP,WATER,AMULET,TREASURE,EXIT,CURSE
+from .confs import INITIAL_WATER_SUPPLY, LLM_PROMPT_TEMPLATE_TEXT, MAP_BOUNDARIES
 
-TYPE = const.TYPE
-WORD = const.WORD
+TYPE = TYPE
+WORD = WORD
 
-TRAP_EMOJI = const.TRAP_EMOJI
-WATER_EMOJI = const.WATER_EMOJI
-CURSE_EMOJI = const.CURSE_EMOJI
-AMULET_EMOJI = const.AMULET_EMOJI
-EXIT_EMOJI = const.EXIT_EMOJI
-TREASURE_EMOJI = const.TREASURE_EMOJI
-NOTHING_EMOJI = const.NOTHING_EMOJI
-EMPTY_EMOJI = const.EMPTY_EMOJI
+TRAP_EMOJI = TRAP_EMOJI
+WATER_EMOJI = WATER_EMOJI
+CURSE_EMOJI = CURSE_EMOJI
+AMULET_EMOJI = AMULET_EMOJI
+EXIT_EMOJI = EXIT_EMOJI
+TREASURE_EMOJI = TREASURE_EMOJI
+NOTHING_EMOJI = NOTHING_EMOJI
+EMPTY_EMOJI = EMPTY_EMOJI
 
-MOCKED_MAP_SETUP_WORDS = { 
+MOCKED_MAP_SETUP_WORDS = {
     1: {
         4: "Salt"
     },
@@ -36,7 +36,7 @@ MOCKED_LLM_RESPONSE_DICT = {
     "Grey": 5,
     "Graphene": 6,
     "Pencil": 10,
-    "Tangerine": 11 
+    "Tangerine": 11
 }
 
 MOCKED_WORD_MOVES = {
@@ -71,27 +71,27 @@ def print_gameboard(gameboard):
             new_symbol = NOTHING_EMOJI
             if tile_content[TYPE] == WORD:
                 new_symbol = gameboard[line][column][WORD]
-                #Checking if above 2 characters lenght, if so, changing content for an index                
+                #Checking if above 2 characters lenght, if so, changing content for an index
                 if len(new_symbol) > 2:
                     next_index = len(word_index)
                     word_index.append(f"{new_symbol}")
                     new_symbol = f"{next_index}"
                 #Checking if equal to one, adding padding in case it is to match emoji visual lenght
                 if len(new_symbol) == 1:
-                    new_symbol = f".{new_symbol}"                    
-            elif tile_content[TYPE] == const.EMPTY:
+                    new_symbol = f".{new_symbol}"
+            elif tile_content[TYPE] == EMPTY:
                 new_symbol = EMPTY_EMOJI
-            elif tile_content[TYPE] == const.WATER:
+            elif tile_content[TYPE] == WATER:
                 new_symbol = WATER_EMOJI
-            elif tile_content[TYPE] == const.TRAP:
+            elif tile_content[TYPE] == TRAP:
                 new_symbol = TRAP_EMOJI
-            elif tile_content[TYPE] == const.CURSE:
+            elif tile_content[TYPE] == CURSE:
                 new_symbol = CURSE_EMOJI
-            elif tile_content[TYPE] == const.AMULET:
+            elif tile_content[TYPE] == AMULET:
                 new_symbol = AMULET_EMOJI
-            elif tile_content[TYPE] == const.EXIT:
+            elif tile_content[TYPE] == EXIT:
                 new_symbol = EXIT_EMOJI
-            elif tile_content[TYPE] == const.TREASURE:
+            elif tile_content[TYPE] == TREASURE:
                 new_symbol = TREASURE_EMOJI
 
             x = 2*line + column - 5
@@ -133,7 +133,7 @@ def print_gameboard_stats(gameboard):
     status_str += f"Game status: {gameboard.game_status}\n"
     status_str += f"Score: {gameboard.score}\n"
 
-    if gameboard.game_status == const.DEFEAT:
+    if gameboard.game_status == DEFEAT:
         status_str += f"Defeat reason: {gameboard.defeat_reason}"
 
     print(status_str + "\n")
@@ -142,27 +142,27 @@ def print_gameboard_stats(gameboard):
 def check_valid_tile_coord(tile_coord):
     line, column = tile_coord
 
-    if line in confs.MAP_BOUNDARIES.keys():
-        if ((column >= confs.MAP_BOUNDARIES[line][const.BEGINNING]) and (column <= confs.MAP_BOUNDARIES[line][const.END])):
+    if line in MAP_BOUNDARIES.keys():
+        if ((column >= MAP_BOUNDARIES[line][BEGINNING]) and (column <= MAP_BOUNDARIES[line][END])):
             return True
     return False
 
 
 def calculate_score(game_board):
-    # score = victory*1000 + treasures*500 - trap*100 - curse*300 + amulets*300 - moves*30
-    score = 0
+    # score = 3000 + victory*1000 + treasures*500 - trap*100 - curse*300 + amulets*300 - moves*30
+    score = 3000
 
-    if (game_board.game_status == const.VICTORY):
+    if (game_board.game_status == VICTORY):
         score += 1000
     score += 500 * game_board.treasure_count
 
-    traps = confs.INITIAL_WATER_SUPPLY - game_board.max_water_supply
+    traps = INITIAL_WATER_SUPPLY - game_board.max_water_supply
     score -= 100 * traps
 
     score -= 300 * game_board.curse_count
 
     score += 300 * game_board.amulet_count
-    
+
     score -= 30 * game_board.move_count
 
     return score
@@ -173,20 +173,20 @@ def check_word_similarity(new_word, previous_words):
     return False
 
 #Returns the word group index closest to the given word
-def query_ai_for_closest_word_group(word, word_groups_tile_mapping):
+def query_ai_for_closest_word_group(word, word_groups_tile_mapping, handler=None):
 
     groups_list_str = ""
     #Creating a list with the word groups
     for key in word_groups_tile_mapping.keys():
-        groups_list_str += f"\n{word_groups_tile_mapping[key][const.INDEX]} - {key}"
+        groups_list_str += f"\n{word_groups_tile_mapping[key][INDEX]} - {key}"
     print(groups_list_str)
 
     #Formatting prompt for the LLM
-    llm_prompt = confs.LLM_PROMPT_TEMPLATE_TEXT.format(given_word=word, word_sets=groups_list_str)
+    llm_prompt = LLM_PROMPT_TEMPLATE_TEXT.format(given_word=word, word_sets=groups_list_str)
     print(llm_prompt)
 
     #Calling the LLM
-    llm_response_str = query_llm(llm_prompt)
+    llm_response_str = query_llm(llm_prompt, handler)
 
     #Splitting the selection and the reasoning
     chosen_group_index = llm_response_str.split(sep=".", maxsplit=1)[0]
@@ -196,14 +196,17 @@ def query_ai_for_closest_word_group(word, word_groups_tile_mapping):
         #Convert to int
         chosen_group_index = int(chosen_group_index)
     except Exception as e:
-        raise RuntimeError(f"Couldn't extract index from LLM response\nPrompt:\n{llm_prompt}\nResponse:\n{llm_response_str}")
+        raise RuntimeError(f"Couldn't extract index from LLM response\nPrompt:\n{llm_prompt}\nResponse:\n{llm_response_str} {e=}")
 
     print(f"Chosen group was number {chosen_group_index}.\nReasoning:\n{reasoning}")
-    return {const.INDEX: chosen_group_index, const.REASONING: reasoning}
+    return {INDEX: chosen_group_index, REASONING: reasoning}
 
-def query_llm(llm_prompt):
+def query_llm(llm_prompt, handler=None):
 
     #The handler is initialized with the mocked one but might be changed to a new one
+    if handler:
+        llm_handler=handler
+    print(f"Using handler {llm_handler}")
     llm_response = llm_handler(llm_prompt)
 
     return llm_response
@@ -216,7 +219,7 @@ def mocked_llm(llm_prompt):
     print(f"Provided word sets are:\n{word_sets}")
 
     index = 1
-    if word in MOCKED_LLM_RESPONSE_DICT.keys(): 
+    if word in MOCKED_LLM_RESPONSE_DICT.keys():
         index = MOCKED_LLM_RESPONSE_DICT[word]
 
     llm_response = f"{index}. I like turtles"
@@ -224,4 +227,3 @@ def mocked_llm(llm_prompt):
 
 #Initializing the llm handler with the mocked one
 llm_handler = mocked_llm
-llm_in_use = const.MOCKED

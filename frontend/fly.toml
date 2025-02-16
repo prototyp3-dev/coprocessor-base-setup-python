@@ -1,0 +1,21 @@
+
+app = 'tikal-back'
+
+primary_region = 'iad'
+
+[build.args]
+  ENV_FILE=".env.holesky"
+
+[http_service]
+  internal_port = 80
+  force_https = true
+  auto_stop_machines = 'off'
+  auto_start_machines = false
+  min_machines_running = 1
+  processes = ['app']
+
+[[vm]]
+  size = 'shared-cpu-1x'
+  memory = '1gb'
+  cpu_kind = 'shared'
+  cpus = 1

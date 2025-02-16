@@ -2,9 +2,15 @@ from logging import getLogger, basicConfig, DEBUG
 from pydantic import BaseModel
 from typing import Annotated, List
 import json
+import jsonpickle
 
 from cartesi import App, Rollup, RollupData, abi
 from cartesi.models import _str2hex as str2hex
+
+from game_engine.core_engine.const import EXIT
+from game_engine.core_engine import tikal_core as tkl_core
+from game_engine.core_engine.confs import STANDARD_LLAMA_PAYLOAD
+
 
 LOGGER = getLogger(__name__)
 basicConfig(level=DEBUG)
@@ -29,20 +35,10 @@ class ChallengeNotice(BaseModel):
 LLAMA_DOMAIN = int.from_bytes(bytes.fromhex('2b'), "big") # llama domain
 DATA_MESSAGE = "The word is \"%s\" and the word sets are:\n%s"
 
-standard_llama_message = {
-    "model": "phi3",
-    "messages": [{
-        "role": "system",
-        "content": "I am going to provide you with a numbered list of word sets and with an isolated word and I need you to tell me the number of the word set that is more related to the given isolated word.\nOnly consider the meaning of the word. Do not accept multiple words, ignore radicals and suffix correlations, words that are not present on the english dictionary, in these cases answer 0.\nBegin your answer with the isolated number followed by a period. After the period you can add your reasoning for choosing that option."
-    },
-    {
-        "role": "user",
-        "content": None
-    }]
-}
+
+
 @app.advance()
 def handle_advance(rollup: Rollup, data: RollupData) -> bool:
-
     LOGGER.debug(f"App advance 0x{rollup=} {data=}")
 
     payload = data.bytes_payload()
@@ -52,14 +48,10 @@ def handle_advance(rollup: Rollup, data: RollupData) -> bool:
 
     LOGGER.info(f"Challenge id 0x{words_model.challenge_id.hex().rjust(64,'0')} and words selected {selected_words}")
 
-    challenge_original_sets = ["lime","wattermelon","tie","lime, wattermelon","lime, tie","wattermelon, tie"]
+    def call_llama_server_gio(message):
+        llama_message = STANDARD_LLAMA_PAYLOAD.copy()
+        llama_message["messages"][1]["content"] = message
 
-    current_sets = challenge_original_sets.copy()
-
-    for selected_word in selected_words:
-        llama_message = standard_llama_message.copy()
-        current_sets_str = [f"{i+1}: {current_sets[i]}" for i in range(len(current_sets))]
-        message = DATA_MESSAGE % (selected_word,'\n'.join(current_sets_str))
         LOGGER.info(message)
         llama_message["messages"][1]["content"] = message
 
@@ -69,44 +61,88 @@ def handle_advance(rollup: Rollup, data: RollupData) -> bool:
                 "id":str2hex(json.dumps(llama_message))
             }
         )
+        if res is None: raise Exception("No gio response")
         gio_res = json.loads(res.decode("utf-8"))
         llama_res = None
         if gio_res.get('response') is not None:
             llama_res = json.loads(bytes.fromhex(gio_res['response'][2:]).decode("utf-8"))
         LOGGER.debug(f"llama Res {llama_res}")
+
         if llama_res is not None and llama_res.get('choices') is not None and len(llama_res['choices']) > 0 and \
                 llama_res['choices'][0].get('message') is not None and  llama_res['choices'][0]['message'].get('content') is not None:
             content = llama_res['choices'][0]['message']['content']
-            splitted_content = content.split('.')
-            if len(splitted_content) > 0:
-                set_chosen = 0
-                try:
-                    set_chosen = int(splitted_content[0])
-                except Exception as e:
-                    LOGGER.warn(f"Error processing llama response Res {e}")
-                    continue
-                if set_chosen > 0 and set_chosen <= len(current_sets):
-                    words_chosen_set = current_sets[set_chosen - 1]
-                    reasoning = None
-                    if len(splitted_content) > 1:
-                        reasoning = '.'.join(splitted_content[1:]).strip()
+            return content
 
-                    LOGGER.info(f"Chosen set for word '{selected_word}': {set_chosen} {words_chosen_set}. Reasoning: {reasoning}")
+        return ""
 
-    notice = ChallengeNotice(
-        challenge_id = words_model.challenge_id,
-        timestamp = data.metadata.block_timestamp,
-        score = 60,
-        n_moves = 6,
-        n_moves_left = 3,
-        user = data.metadata.msg_sender,
-        n_treasures = 1,
-        escaped = True,
-    )
-    notice_hex = f"0x{abi.encode_model(notice).hex()}"
-    LOGGER.debug(f"{notice=}")
-    LOGGER.debug(f"{notice_hex=}")
-    rollup.notice(notice_hex)
+    int_game_id = int.from_bytes(words_model.challenge_id, "big")
+    new_game_state = tkl_core.GameState(game_id=int_game_id, new_game=True)
+
+    #Removing some indexes to make the response simpler
+    if new_game_state.game_board is not None:
+        del new_game_state.game_board.words_on_board
+        del new_game_state.game_board.word_tile_coords_set
+
+    serialized_output_state = jsonpickle.encode(new_game_state)
+
+    for selected_word in selected_words:
+        deserialized_state = jsonpickle.decode(serialized_output_state)
+        current_game_state = tkl_core.GameState(game_map=deserialized_state.game_map,
+            game_board=deserialized_state.game_board,
+            words=deserialized_state.words,
+            game_id=deserialized_state.game_id,
+            new_game=False)
+
+        #Create game executor and load map and board
+        game_executor = tkl_core.GameExecutor(current_game_state.game_board, current_game_state.game_map)
+
+        #Execute game
+        gameboard_output = game_executor.execute_game(current_game_state.words, handler=call_llama_server_gio)
+
+        #Remove indexes
+        if gameboard_output is not None:
+            del gameboard_output.words_on_board
+            del gameboard_output.word_tile_coords_set
+
+        current_game_state.game_board = gameboard_output
+        serialized_output_state = jsonpickle.encode(current_game_state)
+
+
+    deserialized_state = jsonpickle.decode(serialized_output_state)
+    final_game_state = tkl_core.GameState(game_map=deserialized_state.game_map,
+        game_board=deserialized_state.game_board,
+        words=deserialized_state.words,
+        game_id=deserialized_state.game_id,
+        new_game=False)
+
+    if (data.metadata  is not None):
+        notice: ChallengeNotice
+        if (final_game_state.game_board is not None):
+            notice = ChallengeNotice(
+                challenge_id = words_model.challenge_id,
+                timestamp = data.metadata.block_timestamp,
+                score = final_game_state.game_board.score,
+                n_moves = final_game_state.game_board.move_count,
+                n_moves_left = final_game_state.game_board.water_supply,
+                user = data.metadata.msg_sender,
+                n_treasures = final_game_state.game_board.treasure_count,
+                escaped = final_game_state.game_board.last_visited_tile_type == EXIT,
+            )
+        else:
+            notice = ChallengeNotice(
+                challenge_id = words_model.challenge_id,
+                timestamp = data.metadata.block_timestamp,
+                score = 0,
+                n_moves = 0,
+                n_moves_left =0,
+                user = data.metadata.msg_sender,
+                n_treasures = 0,
+                escaped = False,
+            )
+        notice_hex = f"0x{abi.encode_model(notice).hex()}"
+        LOGGER.debug(f"{notice=}")
+        LOGGER.debug(f"{notice_hex=}")
+        rollup.notice(notice_hex)
     return True
 
 

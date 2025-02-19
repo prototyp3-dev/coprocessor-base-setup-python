@@ -93,7 +93,7 @@ SOLVER_URL=
 TASK_ISSUER=
 ```
 
-And you can run similar commands wiht `<testnet>` suffiex:
+And you can run similar commands wiht `<testnet>` suffix:
 
 ```
 make deploy-contract-<testnet>

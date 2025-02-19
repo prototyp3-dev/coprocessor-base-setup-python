@@ -1,10 +1,11 @@
-# Escape from Tikal
+# Coprocessor Base Setup Python
 
 This is a coprocessor with python-cartesi app example. It exemplifies how to use, create and setup the application. Use this repo to kickstart your own coprocessor applications.
 
 # Requisites
 
-TODO
+- [cartesi cli](https://docs.cartesi.io/cartesi-rollups/1.5/quickstart/)
+- [Foundry](https://book.getfoundry.sh/getting-started/installation#using-foundryup)
 
 # Running on local devnet
 
